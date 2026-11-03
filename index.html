@@ -13,13 +13,15 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <!-- DOMPurify for Bulletproof HTML Sanitization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/dompurify.min.js"></script>
+
   <!-- Marked.js for Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
   <!-- PDF.js for Browser-native PDF text extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    // Configure PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
 
@@ -32,7 +34,7 @@
       --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
       --bg-midnight: #000000;
       --surface-midnight: rgba(22, 22, 24, 0.75);
-      --surface-elevated: rgba(36, 36, 40, 0.85);
+      --surface-elevated: rgba(28, 28, 32, 0.88);
       --border-midnight: rgba(255, 255, 255, 0.12);
       --text-main: #f5f5f7;
       --text-muted: #86868b;
@@ -43,7 +45,6 @@
       --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Studio Themes */
     body.theme-midnight {
       --bg-main: #000000;
       --text-prompter: #ffffff;
@@ -73,7 +74,6 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
     }
 
     body {
@@ -91,7 +91,6 @@
       user-select: text;
     }
 
-    /* Frosted Glass Utilities */
     .glass {
       background: var(--surface-midnight);
       backdrop-filter: blur(28px) saturate(180%);
@@ -100,14 +99,13 @@
     }
 
     .glass-pill {
-      background: rgba(30, 30, 34, 0.78);
+      background: rgba(30, 30, 34, 0.85);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
     }
 
-    /* Screen Views */
     .view {
       position: absolute;
       inset: 0;
@@ -125,14 +123,13 @@
     }
 
     /* ========================================================= */
-    /* 1. STUDIO EDITOR & SCRIPT LIBRARY VIEW                   */
+    /* 1. STUDIO EDITOR & SCRIPT LIBRARY                         */
     /* ========================================================= */
     #editorView {
-      background: #000000;
+      background: #09090b;
       color: #f5f5f7;
     }
 
-    /* Header Nav */
     .nav-header {
       height: 60px;
       padding: 0 24px;
@@ -140,6 +137,8 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 12, 14, 0.85);
+      backdrop-filter: blur(20px);
       z-index: 10;
     }
 
@@ -166,16 +165,15 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    /* Button Styles */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 8px 16px;
+      padding: 8px 15px;
       font-size: 0.85rem;
       font-weight: 500;
       border-radius: 12px;
@@ -188,7 +186,7 @@
 
     .btn:hover {
       background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255,255,255,0.24);
+      border-color: rgba(255,255,255,0.22);
     }
 
     .btn:active {
@@ -215,7 +213,6 @@
       border-radius: 50%;
     }
 
-    /* Dual-Pane Editor Workspace */
     .workspace {
       display: flex;
       flex: 1;
@@ -223,13 +220,12 @@
       overflow: hidden;
     }
 
-    /* Library Sidebar */
     .sidebar {
       width: 320px;
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
-      background: #09090b;
+      background: #0e0e11;
       transition: transform 0.3s var(--ease-apple);
     }
 
@@ -246,6 +242,11 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
+    }
+
+    .sidebar-tools {
+      display: flex;
+      gap: 6px;
     }
 
     .script-list {
@@ -299,21 +300,37 @@
       color: #64b5ff;
     }
 
-    /* Main Script Editor Stage */
     .editor-stage {
       flex: 1;
       display: flex;
       flex-direction: column;
       background: #000000;
       position: relative;
+      overflow-y: auto;
+      padding: 24px 32px 40px;
     }
 
-    .editor-topbar {
-      padding: 14px 28px;
+    .editor-card {
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: #141417;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+      min-height: 580px;
+      flex: 1;
+    }
+
+    .editor-card-header {
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       gap: 16px;
     }
 
@@ -329,59 +346,88 @@
     }
 
     .title-input::placeholder {
-      color: rgba(255, 255, 255, 0.25);
+      color: rgba(255, 255, 255, 0.28);
     }
 
-    .editor-stats {
+    .editor-stats-bar {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       font-size: 0.8rem;
       color: var(--text-muted);
       white-space: nowrap;
     }
 
-    .stat-badge {
-      display: inline-flex;
+    .save-status-indicator {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #34c759;
+      display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
 
-    /* Drag and Drop Dropzone / Text Editor */
+    .save-status-indicator.saving {
+      color: #ffd60a;
+    }
+
     .editor-container {
       flex: 1;
-      padding: 24px 28px;
+      padding: 24px;
       position: relative;
       display: flex;
       flex-direction: column;
     }
 
+    .editor-guidance-pill {
+      align-self: flex-start;
+      margin-bottom: 14px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .script-textarea {
       flex: 1;
       width: 100%;
-      background: transparent;
-      border: none;
+      min-height: 400px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 20px;
       outline: none;
-      color: #e5e5ea;
+      color: #f5f5f7;
       font-size: 1.15rem;
-      line-height: 1.7;
+      line-height: 1.75;
       font-family: var(--font-stack);
       resize: none;
       white-space: pre-wrap;
+      transition: border-color 0.2s;
+    }
+
+    .script-textarea:focus {
+      border-color: rgba(41, 151, 255, 0.5);
+      box-shadow: 0 0 0 2px rgba(41, 151, 255, 0.15);
     }
 
     .script-textarea::placeholder {
-      color: rgba(255, 255, 255, 0.25);
+      color: rgba(255, 255, 255, 0.28);
     }
 
-    /* Drag and Drop Floating Overlay */
     .drop-overlay {
       position: absolute;
-      inset: 16px;
+      inset: 12px;
       border: 2px dashed #2997ff;
       border-radius: 16px;
-      background: rgba(41, 151, 255, 0.06);
-      backdrop-filter: blur(8px);
+      background: rgba(41, 151, 255, 0.09);
+      backdrop-filter: blur(10px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -398,14 +444,7 @@
       pointer-events: auto;
     }
 
-    .drop-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #2997ff;
-    }
-
-    /* Hidden File Input */
-    #fileInput {
+    #fileInput, #backupFileInput {
       display: none;
     }
 
@@ -422,40 +461,30 @@
       cursor: default;
     }
 
-    /* Viewport transforms for Beamsplitter glass mirrors */
     .prompter-viewport {
       width: 100%;
       height: 100%;
       overflow-y: scroll;
       overflow-x: hidden;
       scroll-behavior: auto;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE 10+ */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       position: relative;
     }
 
     .prompter-viewport::-webkit-scrollbar {
-      display: none; /* Safari and Chrome */
+      display: none;
     }
 
-    .prompter-mirror-x {
-      transform: scaleX(-1);
-    }
+    .prompter-mirror-x { transform: scaleX(-1); }
+    .prompter-mirror-y { transform: scaleY(-1); }
+    .prompter-mirror-xy { transform: scale(-1, -1); }
 
-    .prompter-mirror-y {
-      transform: scaleY(-1);
-    }
-
-    .prompter-mirror-xy {
-      transform: scale(-1, -1);
-    }
-
-    /* Content Column */
     .prompter-content-wrapper {
       margin: 0 auto;
       width: 100%;
       max-width: 820px;
-      padding: 45vh 32px 55vh; /* Center active line at ~45% screen */
+      padding: 42vh 32px 55vh;
       transition: max-width 0.25s var(--ease-apple);
     }
 
@@ -470,10 +499,9 @@
       transition: font-size 0.2s, line-height 0.2s;
     }
 
-    /* Center Eye-line Reading Guide */
     .eyeline-guide {
       position: absolute;
-      top: 45%;
+      top: 42%;
       left: 0;
       width: 100%;
       height: 2px;
@@ -494,22 +522,21 @@
 
     .eyeline-bracket-left,
     .eyeline-bracket-right {
-      width: 16px;
-      height: 28px;
+      width: 18px;
+      height: 32px;
       border: 3px solid var(--focus-guide);
-      margin: 0 12px;
+      margin: 0 14px;
     }
     .eyeline-bracket-left { border-right: none; border-radius: 6px 0 0 6px; }
     .eyeline-bracket-right { border-left: none; border-radius: 0 6px 6px 0; }
 
-    /* Top Progress Scrubber Bar */
     .prompter-progress-track {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 3px;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
       z-index: 55;
       cursor: pointer;
     }
@@ -518,19 +545,67 @@
       height: 100%;
       width: 0%;
       background: #2997ff;
-      box-shadow: 0 0 8px rgba(41, 151, 255, 0.7);
+      box-shadow: 0 0 10px rgba(41, 151, 255, 0.8);
       transition: width 0.1s linear;
     }
 
-    /* Countdown Overlay */
-    .countdown-overlay {
+    /* Minimalist Apple Keep-Awake Status Pill (No Eye Icon) */
+    .prompter-status-tag {
       position: absolute;
-      inset: 0;
+      top: 14px;
+      right: 18px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
       display: flex;
       align-items: center;
+      gap: 7px;
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 60;
+      color: #34c759;
+      cursor: pointer;
+      transition: all 0.25s var(--ease-apple);
+      user-select: none;
+    }
+
+    .prompter-status-tag:hover {
+      background: rgba(35, 35, 40, 0.95);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .prompter-status-tag.inactive {
+      color: #8e8e93;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 8px #34c759;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .prompter-status-tag.inactive .status-dot {
+      background: #8e8e93;
+      box-shadow: none;
+    }
+
+    /* Transparent Countdown Overlay: Prompter text stays 100% visible */
+    .countdown-overlay {
+      position: absolute;
+      top: 36%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(12px);
       z-index: 90;
       opacity: 0;
       pointer-events: none;
@@ -539,25 +614,37 @@
 
     .countdown-overlay.show {
       opacity: 1;
-      pointer-events: auto;
+    }
+
+    .countdown-badge {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: rgba(18, 18, 20, 0.82);
+      backdrop-filter: blur(24px);
+      border: 2px solid rgba(41, 151, 255, 0.7);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(41, 151, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .countdown-number {
-      font-size: 8rem;
+      font-size: 3.2rem;
       font-weight: 800;
       color: #ffffff;
-      text-shadow: 0 8px 32px rgba(41, 151, 255, 0.5);
+      line-height: 1;
       animation: pulsePop 1s infinite;
     }
 
     @keyframes pulsePop {
-      0% { transform: scale(0.7); opacity: 0; }
-      40% { transform: scale(1.1); opacity: 1; }
+      0% { transform: scale(0.8); opacity: 0; }
+      40% { transform: scale(1.08); opacity: 1; }
       70% { transform: scale(1); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(0.92); opacity: 0.1; }
     }
 
-    /* Floating Studio Glass HUD */
+    /* Floating Studio HUD */
     .studio-hud {
       position: absolute;
       bottom: 24px;
@@ -567,7 +654,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       opacity: 1;
       transition: opacity 0.35s var(--ease-apple), transform 0.35s var(--ease-apple);
     }
@@ -581,8 +668,8 @@
     .hud-island {
       display: flex;
       align-items: center;
-      padding: 6px 10px;
-      gap: 6px;
+      padding: 7px 12px;
+      gap: 8px;
       border-radius: 999px;
     }
 
@@ -624,7 +711,7 @@
     .hud-speed-pill {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       padding: 0 10px;
       font-size: 0.8rem;
       font-weight: 600;
@@ -633,10 +720,10 @@
 
     .hud-slider {
       -webkit-appearance: none;
-      width: 90px;
+      width: 85px;
       height: 4px;
       border-radius: 2px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.22);
       outline: none;
       cursor: pointer;
     }
@@ -651,9 +738,8 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
 
-    /* Secondary HUD Drawer for Typography & Studio Settings */
     .hud-settings-drawer {
-      padding: 12px 18px;
+      padding: 12px 20px;
       border-radius: 22px;
       display: flex;
       align-items: center;
@@ -673,9 +759,24 @@
 
     .hud-label {
       color: var(--text-muted);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+    }
+
+    .wpm-preset-btn {
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #f5f5f7;
+      cursor: pointer;
+    }
+
+    .wpm-preset-btn.active {
+      background: #2997ff;
+      border-color: #2997ff;
     }
 
     .theme-chip {
@@ -691,51 +792,63 @@
       transform: scale(1.15);
     }
 
-    /* Screen Wake Lock Pill (Clarified & Interactive) */
-    .prompter-status-tag {
-      position: absolute;
-      top: 14px;
-      right: 18px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+    /* Modal Reference Dialog */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      z-index: 120;
       display: flex;
       align-items: center;
-      gap: 7px;
-      background: rgba(18, 18, 20, 0.75);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      z-index: 60;
-      color: #34c759;
-      cursor: pointer;
-      transition: all 0.25s var(--ease-apple);
-      user-select: none;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s var(--ease-apple);
     }
 
-    .prompter-status-tag:hover {
-      background: rgba(30, 30, 34, 0.9);
-      border-color: rgba(255, 255, 255, 0.25);
+    .modal-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .prompter-status-tag.inactive {
-      color: #8e8e93;
+    .modal-sheet {
+      width: 90%;
+      max-width: 480px;
+      background: #1c1c1e;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #34c759;
-      box-shadow: 0 0 8px #34c759;
-      transition: background 0.2s, box-shadow 0.2s;
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .prompter-status-tag.inactive .status-dot {
-      background: #8e8e93;
-      box-shadow: none;
+    .hotkey-table {
+      width: 100%;
+      font-size: 0.85rem;
+      border-collapse: collapse;
+    }
+
+    .hotkey-table td {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hotkey-key {
+      display: inline-block;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: 600;
     }
 
     /* Formatted Markdown Script Display */
@@ -791,8 +904,10 @@
       transform: translateY(0);
     }
 
-    /* Responsive Breakpoints */
     @media (max-width: 768px) {
+      .editor-stage {
+        padding: 14px;
+      }
       .sidebar {
         position: absolute;
         left: 0;
@@ -806,7 +921,7 @@
         box-shadow: 20px 0 50px rgba(0,0,0,0.8);
       }
       .prompter-content-wrapper {
-        padding: 40vh 20px 50vh;
+        padding: 38vh 20px 50vh;
       }
       .prompter-text {
         font-size: 32px;
@@ -824,18 +939,14 @@
 </head>
 <body class="theme-midnight">
 
-  <!-- ========================================== -->
-  <!-- TOAST NOTIFICATIONS                        -->
-  <!-- ========================================== -->
   <div class="toast-container">
     <div id="toast" class="toast">Script loaded</div>
   </div>
 
   <!-- ========================================== -->
-  <!-- VIEW 1: SCRIPT LIBRARY & EDITOR            -->
+  <!-- VIEW 1: STUDIO SCRIPT EDITOR               -->
   <!-- ========================================== -->
   <div id="editorView" class="view active">
-    <!-- Navigation Bar -->
     <header class="nav-header">
       <div class="brand-logo">
         <i data-lucide="tv" style="width: 20px; height: 20px; color: #2997ff;"></i>
@@ -844,70 +955,85 @@
       </div>
 
       <div class="nav-actions">
-        <!-- Sidebar Toggle for Mobile -->
         <button id="btnToggleSidebar" class="btn btn-icon-only" title="Toggle Scripts Drawer">
           <i data-lucide="folder" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Import Button (PDF, DOCX, MD, TXT) -->
         <button id="btnTriggerImport" class="btn" title="Import Document">
           <i data-lucide="file-up" style="width: 16px; height: 16px;"></i>
           <span>Import</span>
         </button>
         <input type="file" id="fileInput" accept=".txt,.md,.pdf,.docx">
 
-        <!-- Launch Prompter Button -->
-        <button id="btnStartPrompter" class="btn btn-primary" title="Start Teleprompter (Space)">
+        <button id="btnShortcutsModal" class="btn btn-icon-only" title="Keyboard Shortcuts (?)">
+          <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <button id="btnStartPrompter" class="btn btn-primary" title="Launch Teleprompter (Space)">
           <i data-lucide="play" style="width: 16px; height: 16px;"></i>
           <span>Prompt</span>
         </button>
       </div>
     </header>
 
-    <!-- Workspace -->
     <div class="workspace">
       <!-- Script Drawer / Library -->
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <span class="sidebar-title">Your Scripts</span>
-          <button id="btnNewScript" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="New Script">
-            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-          </button>
-        </div>
-        <div id="scriptList" class="script-list">
-          <!-- Rendered via JS -->
-        </div>
-      </aside>
-
-      <!-- Editor Canvas -->
-      <main class="editor-stage">
-        <!-- Title & Metadata Bar -->
-        <div class="editor-topbar">
-          <input type="text" id="scriptTitleInput" class="title-input" placeholder="Untitled Script...">
-          
-          <div class="editor-stats">
-            <div class="stat-badge" title="Word Count">
-              <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
-              <span id="wordCountLabel">0 words</span>
-            </div>
-            <div class="stat-badge" title="Estimated Reading Time at 140 WPM">
-              <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
-              <span id="readingTimeLabel">0:00</span>
-            </div>
-            <button id="btnDeleteCurrent" class="btn btn-icon-only" style="border: none; color: #ff453a;" title="Delete Script">
-              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+          <div class="sidebar-tools">
+            <button id="btnBackupExport" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="Backup All (JSON)">
+              <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            </button>
+            <button id="btnBackupImport" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="Restore Backup">
+              <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
+            </button>
+            <input type="file" id="backupFileInput" accept=".json">
+            <button id="btnNewScript" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="New Script">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
             </button>
           </div>
         </div>
+        <div id="scriptList" class="script-list"></div>
+      </aside>
 
-        <!-- Textarea & Drop Surface -->
-        <div class="editor-container" id="editorDropZone">
-          <textarea id="scriptContentInput" class="script-textarea" placeholder="Paste your script here, start writing, or drop a .pdf, .docx, .md, or .txt file..."></textarea>
-          
-          <!-- Drag-over Drop visual feedback -->
-          <div class="drop-overlay" id="dropOverlay">
-            <i data-lucide="arrow-down-circle" style="width: 48px; height: 48px; color: #2997ff;"></i>
-            <p class="drop-title">Drop PDF, Markdown, Word, or TXT file</p>
+      <!-- Apple-Grade Script Writing Canvas -->
+      <main class="editor-stage">
+        <div class="editor-card">
+          <div class="editor-card-header">
+            <input type="text" id="scriptTitleInput" class="title-input" placeholder="Untitled Presentation...">
+            
+            <div class="editor-stats-bar">
+              <span id="saveStatus" class="save-status-indicator">
+                <i data-lucide="check" style="width: 12px; height: 12px;"></i> Saved
+              </span>
+              <span>•</span>
+              <span id="wordCountLabel">0 words</span>
+              <span>•</span>
+              <span id="readingTimeLabel">0:00</span>
+              <button id="btnExportSingle" class="btn btn-icon-only" style="border: none; width: 28px; height: 28px;" title="Export Script (.md)">
+                <i data-lucide="file-output" style="width: 15px; height: 15px;"></i>
+              </button>
+              <button id="btnDeleteCurrent" class="btn btn-icon-only" style="border: none; color: #ff453a; width: 28px; height: 28px;" title="Delete Script">
+                <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-container" id="editorDropZone">
+            <div class="editor-guidance-pill">
+              <i data-lucide="pen-tool" style="width: 12px; height: 12px; color: #2997ff;"></i>
+              <span>Paste script here or drag & drop .txt, .md, .docx, .pdf</span>
+            </div>
+            
+            <textarea id="scriptContentInput" class="script-textarea" placeholder="Start typing your speech, paste notes, or drop files here...
+# Markdown is supported
+Headings, bullets, and emphasis are automatically sanitized and converted into readable prompter cues."></textarea>
+            
+            <div class="drop-overlay" id="dropOverlay">
+              <i data-lucide="arrow-down-circle" style="width: 48px; height: 48px; color: #2997ff;"></i>
+              <p style="font-weight: 600; color: #2997ff;">Drop document to import cleanly</p>
+            </div>
           </div>
         </div>
       </main>
@@ -915,146 +1041,242 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- VIEW 2: LIVE TELEPROMPTER VIEW             -->
+  <!-- VIEW 2: LIVE TELEPROMPTER                  -->
   <!-- ========================================== -->
   <div id="prompterView" class="view">
-    <!-- Reading Progress Bar -->
     <div id="progressTrack" class="prompter-progress-track" title="Click to Scrub">
       <div id="progressFill" class="prompter-progress-fill"></div>
     </div>
 
-    <!-- Active Screen Status (Keep Awake Pill) -->
-    <div class="prompter-status-tag" id="statusBadge" title="Keeps your screen from dimming/sleeping. Click to toggle.">
+    <!-- Apple Minimalist Keep-Awake Pill (No Eye Icon) -->
+    <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display sleep prevention">
       <div class="status-dot" id="statusDot"></div>
-      <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
-      <span id="wakeLockStatusText">KEEP AWAKE: ON</span>
+      <span id="wakeLockStatusText">AWAKE: ON</span>
     </div>
 
-    <!-- Central Eyeline Guide -->
     <div id="eyelineGuide" class="eyeline-guide">
       <div class="eyeline-bracket-left"></div>
       <div class="eyeline-bracket-right"></div>
     </div>
 
-    <!-- Teleprompter Scrolling Viewport -->
     <div id="prompterViewport" class="prompter-viewport">
       <div id="prompterWrapper" class="prompter-content-wrapper">
         <div id="prompterText" class="prompter-text"></div>
       </div>
     </div>
 
-    <!-- Countdown Modal -->
+    <!-- Non-obscuring Floating 3-2-1 Countdown Badge -->
     <div id="countdownOverlay" class="countdown-overlay">
-      <div id="countdownNumber" class="countdown-number">3</div>
+      <div class="countdown-badge">
+        <span id="countdownNumber" class="countdown-number">3</span>
+      </div>
     </div>
 
-    <!-- Apple-Style Floating Glass HUD Dock -->
+    <!-- Floating Glass HUD -->
     <div id="studioHud" class="studio-hud">
-      <!-- Settings Sub-drawer -->
+      <!-- Secondary Drawer -->
       <div id="settingsDrawer" class="glass-pill hud-settings-drawer hidden">
-        <!-- Font Size Slider -->
         <div class="hud-setting-group">
           <span class="hud-label">Size</span>
-          <input type="range" id="fontSizeSlider" class="hud-slider" min="24" max="96" value="48">
+          <input type="range" id="fontSizeSlider" class="hud-slider" min="26" max="96" value="48">
         </div>
 
-        <!-- Margin / Column Width Slider -->
         <div class="hud-setting-group">
           <span class="hud-label">Width</span>
           <input type="range" id="widthSlider" class="hud-slider" min="400" max="1400" value="820" step="20">
         </div>
 
-        <!-- Eyeline Guide Toggle -->
         <div class="hud-setting-group">
-          <button id="btnToggleGuide" class="hud-btn active" title="Toggle Eye-line Focus Guide">
-            <i data-lucide="crosshair" style="width: 18px; height: 18px;"></i>
+          <span class="hud-label">Presets</span>
+          <button class="wpm-preset-btn" data-wpm="100">100</button>
+          <button class="wpm-preset-btn" data-wpm="130">130</button>
+          <button class="wpm-preset-btn active" data-wpm="150">150</button>
+          <button class="wpm-preset-btn" data-wpm="180">180</button>
+        </div>
+
+        <div class="hud-setting-group">
+          <button id="btnToggleGuide" class="hud-btn active" title="Toggle Focus Guide">
+            <i data-lucide="crosshair" style="width: 17px; height: 17px;"></i>
           </button>
         </div>
 
-        <!-- Themes: Midnight, Paper, Sepia -->
         <div class="hud-setting-group" style="gap: 6px;">
-          <div class="theme-chip active" data-theme="midnight" style="background: #000; border: 1px solid #444;" title="Midnight OLED"></div>
-          <div class="theme-chip" data-theme="paper" style="background: #fff;" title="Studio Paper"></div>
-          <div class="theme-chip" data-theme="sepia" style="background: #181412; border: 1px solid #e6a03c;" title="Studio Sepia"></div>
+          <div class="theme-chip active" data-theme="midnight" style="background: #000; border: 1px solid #444;" title="Midnight"></div>
+          <div class="theme-chip" data-theme="paper" style="background: #fff;" title="Paper"></div>
+          <div class="theme-chip" data-theme="sepia" style="background: #181412; border: 1px solid #e6a03c;" title="Sepia"></div>
         </div>
       </div>
 
       <!-- Main Controls Island -->
       <div class="glass-pill hud-island">
-        <!-- Exit to Editor -->
         <button id="btnExitPrompter" class="hud-btn" title="Exit Prompter (Esc)">
-          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+          <i data-lucide="x" style="width: 19px; height: 19px;"></i>
         </button>
 
-        <!-- Mirror Horizontal (Beam Splitter Glass) -->
         <button id="btnMirrorX" class="hud-btn" title="Mirror Horizontal (M)">
           <i data-lucide="flip-horizontal" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Mirror Vertical -->
         <button id="btnMirrorY" class="hud-btn" title="Mirror Vertical">
           <i data-lucide="flip-vertical" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Reset to Beginning -->
-        <button id="btnResetScroll" class="hud-btn" title="Restart to Top (R)">
+        <button id="btnResetScroll" class="hud-btn" title="Restart to Beginning (R)">
           <i data-lucide="rotate-ccw" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Play / Pause Action (Dynamic Icon & Glow) -->
         <button id="btnPlayPause" class="hud-btn hud-btn-play" title="Play / Pause (Space)">
-          <i id="playIcon" data-lucide="play" style="width: 22px; height: 22px;"></i>
+          <i data-lucide="play" style="width: 22px; height: 22px;"></i>
         </button>
 
-        <!-- Granular Speed Slider -->
-        <div class="hud-speed-pill">
-          <i data-lucide="gauge" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
-          <input type="range" id="speedSlider" class="hud-slider" min="1" max="100" value="28">
-          <span id="speedValueLabel" style="min-width: 28px;">28</span>
+        <!-- Script Position Scrubber Slider -->
+        <div class="hud-speed-pill" title="Scrub script position">
+          <i data-lucide="film" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
+          <input type="range" id="scrubberSlider" class="hud-slider" min="0" max="100" value="0" step="0.1" style="width: 105px;">
+          <span id="scrubberPercentLabel" style="min-width: 38px; font-size: 0.75rem; color: var(--text-muted);">0%</span>
         </div>
 
-        <!-- Reverse Scroll Toggle -->
-        <button id="btnReverseDirection" class="hud-btn" title="Reverse Scroll Direction">
+        <!-- WPM Speed Control -->
+        <div class="hud-speed-pill">
+          <i data-lucide="gauge" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
+          <input type="range" id="speedSlider" class="hud-slider" min="60" max="320" value="150" step="5">
+          <span id="speedValueLabel" style="min-width: 54px;">150 WPM</span>
+        </div>
+
+        <button id="btnReverseDirection" class="hud-btn" title="Reverse Scroll (Upward)">
           <i data-lucide="arrow-up-down" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Settings Toggle -->
         <button id="btnToggleSettings" class="hud-btn" title="Reading & Style Settings">
           <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
         </button>
 
-        <!-- Fullscreen Toggle -->
-        <button id="btnFullscreen" class="hud-btn" title="Fullscreen Mode (F)">
+        <button id="btnFullscreen" class="hud-btn" title="Fullscreen (F)">
           <i data-lucide="maximize" style="width: 18px; height: 18px;"></i>
         </button>
       </div>
     </div>
   </div>
 
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-title">
+        <span>Keyboard Shortcuts</span>
+        <button id="btnCloseModal" class="btn btn-icon-only" style="width: 30px; height: 30px; border: none;">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+      <table class="hotkey-table">
+        <tr><td><span class="hotkey-key">Space</span></td><td>Play / Pause scrolling</td></tr>
+        <tr><td><span class="hotkey-key">↑</span> / <span class="hotkey-key">↓</span></td><td>Increase / decrease speed (WPM)</td></tr>
+        <tr><td><span class="hotkey-key">←</span> / <span class="hotkey-key">→</span></td><td>Jump forward / backward 5 lines</td></tr>
+        <tr><td><span class="hotkey-key">R</span></td><td>Restart to beginning</td></tr>
+        <tr><td><span class="hotkey-key">M</span></td><td>Toggle Horizontal Mirror (Beamsplitter)</td></tr>
+        <tr><td><span class="hotkey-key">F</span></td><td>Toggle Fullscreen mode</td></tr>
+        <tr><td><span class="hotkey-key">Esc</span></td><td>Exit prompter back to editor</td></tr>
+      </table>
+    </div>
+  </div>
+
   <!-- ========================================== -->
-  <!-- APPLICATION LOGIC                          -->
+  <!-- APPLICATION ENGINE                         -->
   <!-- ========================================== -->
   <script>
     // -------------------------------------------------------------
-    // Global State & Storage Models
+    // 1. IndexedDB Storage Engine (with auto-fallback)
     // -------------------------------------------------------------
-    const STORAGE_KEY = 'prompter_studio_scripts_v1';
-    const SETTINGS_KEY = 'prompter_studio_settings_v1';
+    const DB_NAME = 'PrompterStudioDB';
+    const DB_VERSION = 1;
+    const STORE_SCRIPTS = 'scripts';
+    let db = null;
 
-    const defaultScripts = [
-      {
-        id: 'welcome-script',
-        title: 'Welcome to PROMPTER Studio',
-        content: `# Welcome to PROMPTER Studio\n\nThis is an Apple-inspired, studio-grade teleprompter engineered for effortless presentations, YouTube recordings, and keynotes.\n\n## Clean Markdown Parsing\nWhen you paste or import Markdown files, PROMPTER automatically hides messy characters like hashes (#), asterisks (*), and hyphens (---), giving you clean speech typography.\n\n### Essential Features:\n- Screen Keep Awake: Keeps mobile and laptop screens bright and active throughout your take.\n- Beamsplitter Mirroring: One-tap horizontal (M) or vertical flipping for pro glass rigs.\n- Butter-Smooth Scrolling: Precision hardware frame scrolling at your exact speaking pace.\n\nPress Space to pause or play whenever you are ready!`,
-        updatedAt: Date.now()
+    const defaultScript = {
+      id: 'welcome-script',
+      title: 'Welcome to PROMPTER Studio',
+      content: 'Welcome to PROMPTER Studio',
+      lastPosition: 0,
+      updatedAt: Date.now()
+    };
+
+    function initDatabase() {
+      return new Promise((resolve) => {
+        if (!('indexedDB' in window)) {
+          console.warn('IndexedDB unavailable, falling back to LocalStorage');
+          resolve(false);
+          return;
+        }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains(STORE_SCRIPTS)) {
+            dbInstance.createObjectStore(STORE_SCRIPTS, { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(true);
+        };
+        request.onerror = () => resolve(false);
+      });
+    }
+
+    async function dbGetAllScripts() {
+      if (!db) {
+        const local = localStorage.getItem('prompter_scripts_fallback');
+        return local ? JSON.parse(local) : [defaultScript];
       }
-    ];
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_SCRIPTS, 'readonly');
+        const store = tx.objectStore(STORE_SCRIPTS);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result.length ? req.result : [defaultScript]);
+        req.onerror = () => resolve([defaultScript]);
+      });
+    }
+
+    async function dbSaveScript(script) {
+      if (!db) {
+        const scripts = await dbGetAllScripts();
+        const idx = scripts.findIndex(s => s.id === script.id);
+        if (idx >= 0) scripts[idx] = script; else scripts.unshift(script);
+        localStorage.setItem('prompter_scripts_fallback', JSON.stringify(scripts));
+        return;
+      }
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_SCRIPTS, 'readwrite');
+        const store = tx.objectStore(STORE_SCRIPTS);
+        store.put(script);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    }
+
+    async function dbDeleteScript(id) {
+      if (!db) {
+        let scripts = await dbGetAllScripts();
+        scripts = scripts.filter(s => s.id !== id);
+        localStorage.setItem('prompter_scripts_fallback', JSON.stringify(scripts));
+        return;
+      }
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_SCRIPTS, 'readwrite');
+        const store = tx.objectStore(STORE_SCRIPTS);
+        store.delete(id);
+        tx.oncomplete = () => resolve();
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 2. Global State & Settings
+    // -------------------------------------------------------------
+    const SETTINGS_KEY = 'prompter_studio_settings_v2';
 
     let state = {
       scripts: [],
       currentScriptId: null,
       isPlaying: false,
-      speed: 28, // 1 - 100
+      wpm: 150, // Words per minute
       fontSize: 48,
       readingWidth: 820,
       showEyelineGuide: true,
@@ -1064,11 +1286,10 @@
       theme: 'midnight',
       wakeLock: null,
       wakeLockWanted: true,
-      scrollAccumulator: 0,
       isCountdownActive: false
     };
 
-    // DOM Elements Cache
+    // DOM Elements
     const editorView = document.getElementById('editorView');
     const prompterView = document.getElementById('prompterView');
     const scriptList = document.getElementById('scriptList');
@@ -1076,7 +1297,9 @@
     const scriptContentInput = document.getElementById('scriptContentInput');
     const wordCountLabel = document.getElementById('wordCountLabel');
     const readingTimeLabel = document.getElementById('readingTimeLabel');
+    const saveStatus = document.getElementById('saveStatus');
     const fileInput = document.getElementById('fileInput');
+    const backupFileInput = document.getElementById('backupFileInput');
     const dropOverlay = document.getElementById('dropOverlay');
     const editorDropZone = document.getElementById('editorDropZone');
     const sidebar = document.getElementById('sidebar');
@@ -1089,6 +1312,8 @@
     const eyelineGuide = document.getElementById('eyelineGuide');
     const progressFill = document.getElementById('progressFill');
     const progressTrack = document.getElementById('progressTrack');
+    const scrubberSlider = document.getElementById('scrubberSlider');
+    const scrubberPercentLabel = document.getElementById('scrubberPercentLabel');
     const countdownOverlay = document.getElementById('countdownOverlay');
     const countdownNumber = document.getElementById('countdownNumber');
     const speedSlider = document.getElementById('speedSlider');
@@ -1098,113 +1323,102 @@
     const btnPlayPause = document.getElementById('btnPlayPause');
     const statusBadge = document.getElementById('statusBadge');
     const wakeLockStatusText = document.getElementById('wakeLockStatusText');
+    const shortcutsModal = document.getElementById('shortcutsModal');
     const toast = document.getElementById('toast');
 
     // -------------------------------------------------------------
-    // Clean Markdown & Formatting Engine
+    // 3. Security Sanitizer & Clean Markdown Engine
     // -------------------------------------------------------------
-    function cleanMarkdownToHTML(rawText) {
+    function cleanMarkdownToSanitizedHTML(rawText) {
       if (!rawText) return '';
+      let parsed = '';
 
-      // Check if text has markdown signals: #, *, -, ---, _, >
-      const hasMarkdown = /(^#{1,6}\s+|^\s*[-*+]\s+|---|\*\*|__)/m.test(rawText);
-
-      if (hasMarkdown && typeof marked !== 'undefined') {
+      if (typeof marked !== 'undefined') {
         try {
-          // Parse with marked and strip raw markup symbols
-          const html = marked.parse(rawText, { breaks: true, gfm: true });
-          return html;
+          parsed = marked.parse(rawText, { breaks: true, gfm: true });
         } catch (e) {
-          console.warn('Markdown parsing fallback', e);
+          parsed = escapeHtml(rawText);
         }
+      } else {
+        parsed = escapeHtml(rawText);
       }
 
-      // If plain text, wrap paragraphs cleanly
-      return rawText
-        .split('\n\n')
-        .map(p => `<p style="margin-bottom: 1.2em;">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-        .join('');
-    }
-
-    function sanitizeMarkdownPastedText(text) {
-      // Optional cleaner helper to format raw pasted text
-      return text.replace(/\r\n/g, '\n');
+      // DOMPurify Sanitization against XSS
+      if (typeof DOMPurify !== 'undefined') {
+        return DOMPurify.sanitize(parsed, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'hr'],
+          ALLOWED_ATTR: []
+        });
+      }
+      return parsed;
     }
 
     // -------------------------------------------------------------
-    // Initialization & LocalStorage Persistence
+    // 4. Enhanced PDF Extraction with Coordinate Grouping
     // -------------------------------------------------------------
-    function initApp() {
+    async function extractTextFromPDF(arrayBuffer) {
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        if (!textContent.items || textContent.items.length === 0) continue;
+
+        // Sort items by vertical position (Y descending) then horizontal (X ascending)
+        const items = textContent.items.slice().sort((a, b) => {
+          const yDiff = b.transform[5] - a.transform[5];
+          if (Math.abs(yDiff) > 4) return yDiff;
+          return a.transform[4] - b.transform[4];
+        });
+
+        let pageLines = [];
+        let currentLine = '';
+        let lastY = null;
+
+        for (const item of items) {
+          const currentY = item.transform[5];
+          if (lastY === null) {
+            currentLine = item.str;
+          } else if (Math.abs(currentY - lastY) > 8) {
+            pageLines.push(currentLine.trim());
+            currentLine = item.str;
+          } else {
+            currentLine += (currentLine.endsWith(' ') || item.str.startsWith(' ') ? '' : ' ') + item.str;
+          }
+          lastY = currentY;
+        }
+        if (currentLine.trim()) pageLines.push(currentLine.trim());
+
+        fullText += pageLines.join('\n\n') + '\n\n';
+      }
+
+      return fullText.trim() || 'Could not extract text. Document might be scanned images.';
+    }
+
+    // -------------------------------------------------------------
+    // 5. App Initialization & Script Management
+    // -------------------------------------------------------------
+    async function initApp() {
       lucide.createIcons();
+      await initDatabase();
       loadSettings();
-      loadScripts();
+      await refreshScriptLibrary();
       setupEventListeners();
       setupTouchGestures();
       updateStats();
     }
 
-    function loadScripts() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        state.scripts = stored ? JSON.parse(stored) : defaultScripts;
-      } catch (e) {
-        state.scripts = defaultScripts;
+    async function refreshScriptLibrary() {
+      state.scripts = await dbGetAllScripts();
+      if (!state.currentScriptId || !state.scripts.find(s => s.id === state.currentScriptId)) {
+        state.currentScriptId = state.scripts[0].id;
       }
-
-      if (state.scripts.length === 0) {
-        state.scripts = defaultScripts;
-      }
-      state.currentScriptId = state.scripts[0].id;
       renderScriptList();
       loadCurrentScriptIntoEditor();
     }
 
-    function saveScripts() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.scripts));
-      } catch (e) {
-        console.warn('LocalStorage limit exceeded', e);
-      }
-    }
-
-    function loadSettings() {
-      try {
-        const saved = localStorage.getItem(SETTINGS_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          state.speed = parsed.speed || 28;
-          state.fontSize = parsed.fontSize || 48;
-          state.readingWidth = parsed.readingWidth || 820;
-          state.theme = parsed.theme || 'midnight';
-          state.showEyelineGuide = parsed.showEyelineGuide !== undefined ? parsed.showEyelineGuide : true;
-        }
-      } catch (e) {}
-
-      applyTheme(state.theme);
-      speedSlider.value = state.speed;
-      speedValueLabel.textContent = state.speed;
-      fontSizeSlider.value = state.fontSize;
-      widthSlider.value = state.readingWidth;
-      prompterText.style.fontSize = `${state.fontSize}px`;
-      prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
-      if (!state.showEyelineGuide) eyelineGuide.classList.add('hide');
-    }
-
-    function saveSettings() {
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-          speed: state.speed,
-          fontSize: state.fontSize,
-          readingWidth: state.readingWidth,
-          theme: state.theme,
-          showEyelineGuide: state.showEyelineGuide
-        }));
-      } catch (e) {}
-    }
-
-    // -------------------------------------------------------------
-    // Script Management & Ingestion
-    // -------------------------------------------------------------
     function renderScriptList() {
       scriptList.innerHTML = '';
       state.scripts.forEach(script => {
@@ -1212,7 +1426,7 @@
         item.className = `script-item ${script.id === state.currentScriptId ? 'active' : ''}`;
         
         const words = script.content.trim() ? script.content.trim().split(/\s+/).length : 0;
-        const mins = Math.ceil(words / 140);
+        const mins = Math.ceil(words / state.wpm);
 
         item.innerHTML = `
           <div class="script-item-title">${escapeHtml(script.title || 'Untitled')}</div>
@@ -1223,8 +1437,8 @@
           </div>
         `;
 
-        item.addEventListener('click', () => {
-          saveCurrentScriptFromEditor();
+        item.addEventListener('click', async () => {
+          await saveCurrentScriptFromEditor(true);
           state.currentScriptId = script.id;
           renderScriptList();
           loadCurrentScriptIntoEditor();
@@ -1249,39 +1463,57 @@
       updateStats();
     }
 
-    function saveCurrentScriptFromEditor() {
-      const current = getCurrentScript();
-      if (!current) return;
-      current.title = scriptTitleInput.value.trim() || 'Untitled Script';
-      current.content = scriptContentInput.value;
-      current.updatedAt = Date.now();
-      saveScripts();
+    let saveDebounceTimer = null;
+    function triggerDebouncedSave() {
+      setSaveStatus('Saving...', true);
+      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(async () => {
+        await saveCurrentScriptFromEditor();
+        setSaveStatus('Saved', false);
+      }, 400);
     }
 
-    function createNewScript(title = 'Untitled Script', content = '') {
-      saveCurrentScriptFromEditor();
+    function setSaveStatus(text, isSaving) {
+      saveStatus.className = `save-status-indicator ${isSaving ? 'saving' : ''}`;
+      saveStatus.innerHTML = `<i data-lucide="${isSaving ? 'loader-2' : 'check'}" style="width: 12px; height: 12px;"></i> ${text}`;
+      lucide.createIcons();
+    }
+
+    async function saveCurrentScriptFromEditor() {
+      const current = getCurrentScript();
+      if (!current) return;
+      current.title = scriptTitleInput.value.trim() || 'Untitled Presentation';
+      current.content = scriptContentInput.value;
+      current.updatedAt = Date.now();
+      await dbSaveScript(current);
+    }
+
+    async function createNewScript(title = 'Untitled Presentation', content = '') {
+      await saveCurrentScriptFromEditor();
       const newScript = {
-        id: 'script_' + Date.now(),
+        id: 'script_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()),
         title,
         content,
+        lastPosition: 0,
         updatedAt: Date.now()
       };
       state.scripts.unshift(newScript);
       state.currentScriptId = newScript.id;
-      saveScripts();
+      await dbSaveScript(newScript);
       renderScriptList();
       loadCurrentScriptIntoEditor();
       showToast('Created new script');
     }
 
-    function deleteCurrentScript() {
+    async function deleteCurrentScript() {
       if (state.scripts.length <= 1) {
-        showToast('Must keep at least one script');
+        showToast('You must keep at least one script');
         return;
       }
-      state.scripts = state.scripts.filter(s => s.id !== state.currentScriptId);
+      const targetId = state.currentScriptId;
+      await dbDeleteScript(targetId);
+      state.scripts = state.scripts.filter(s => s.id !== targetId);
       state.currentScriptId = state.scripts[0].id;
-      saveScripts();
       renderScriptList();
       loadCurrentScriptIntoEditor();
       showToast('Script deleted');
@@ -1292,84 +1524,84 @@
       const words = text ? text.split(/\s+/).length : 0;
       wordCountLabel.textContent = `${words} words`;
       
-      const totalSeconds = Math.round((words / 140) * 60);
+      const totalSeconds = Math.round((words / state.wpm) * 60);
       const m = Math.floor(totalSeconds / 60);
       const s = totalSeconds % 60;
       readingTimeLabel.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
     // -------------------------------------------------------------
-    // Client-side File Parsers (.txt, .md, .pdf, .docx)
+    // 6. Backup, Export & File Import
     // -------------------------------------------------------------
+    function exportAllScriptsBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.scripts, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = `Prompter_Backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      showToast('Backup exported');
+    }
+
+    function exportSingleScriptMarkdown() {
+      const current = getCurrentScript();
+      const blob = new Blob([current.content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${current.title.replace(/\s+/g, '_')}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Exported Markdown');
+    }
+
+    async function handleBackupRestore(file) {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed) && parsed.length) {
+          for (const s of parsed) {
+            await dbSaveScript(s);
+          }
+          await refreshScriptLibrary();
+          showToast('Backup restored successfully');
+        } else {
+          showToast('Invalid backup file');
+        }
+      } catch (e) {
+        showToast('Restore failed: ' + e.message);
+      }
+    }
+
     async function handleFileImport(file) {
       if (!file) return;
-      showToast(`Parsing ${file.name}...`);
-      const filename = file.name;
-      const extension = filename.split('.').pop().toLowerCase();
-      const title = filename.replace(/\.[^/.]+$/, "");
+      showToast(`Importing ${file.name}...`);
+      const extension = file.name.split('.').pop().toLowerCase();
+      const title = file.name.replace(/\.[^/.]+$/, "");
 
       try {
-        if (extension === 'txt' || extension === 'text') {
+        if (extension === 'txt' || extension === 'text' || extension === 'md' || extension === 'markdown') {
           const text = await file.text();
-          createNewScript(title, text);
-        } else if (extension === 'md' || extension === 'markdown') {
-          const mdText = await file.text();
-          // Convert markdown to plain reading text via marked tokens
-          const cleanText = extractTextFromMarkdown(mdText);
-          createNewScript(title, cleanText);
+          await createNewScript(title, text);
         } else if (extension === 'pdf') {
-          const arrayBuffer = await file.arrayBuffer();
-          const pdfText = await extractTextFromPDF(arrayBuffer);
-          createNewScript(title, pdfText);
+          const buffer = await file.arrayBuffer();
+          const text = await extractTextFromPDF(buffer);
+          await createNewScript(title, text);
         } else if (extension === 'docx') {
-          const arrayBuffer = await file.arrayBuffer();
-          const docxResult = await mammoth.extractRawText({ arrayBuffer });
-          createNewScript(title, docxResult.value);
+          const buffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+          await createNewScript(title, result.value);
         } else {
-          showToast('Unsupported format. Use .txt, .md, .pdf, or .docx');
+          showToast('Format not supported (.txt, .md, .docx, .pdf)');
         }
       } catch (err) {
         console.error(err);
-        showToast('Error parsing file: ' + err.message);
+        showToast('Import error: ' + err.message);
       }
-    }
-
-    function extractTextFromMarkdown(md) {
-      // Use marked to tokenize and strip structural syntax into readable script lines
-      const tokens = marked.lexer(md);
-      let output = '';
-      function walk(tokenList) {
-        for (const token of tokenList) {
-          if (token.type === 'heading') {
-            output += `\n\n${token.text.toUpperCase()}\n\n`;
-          } else if (token.type === 'paragraph') {
-            output += `${token.text}\n\n`;
-          } else if (token.type === 'list') {
-            token.items.forEach(item => { output += `• ${item.text}\n`; });
-            output += '\n';
-          } else if (token.tokens) {
-            walk(token.tokens);
-          }
-        }
-      }
-      walk(tokens);
-      return output.trim() || md;
-    }
-
-    async function extractTextFromPDF(arrayBuffer) {
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        fullText += pageText + '\n\n';
-      }
-      return fullText.trim();
     }
 
     // -------------------------------------------------------------
-    // Teleprompter Engine & Smooth Scroll Loop
+    // 7. Teleprompter Engine, WPM Calibration & Smooth Scroll
     // -------------------------------------------------------------
     let animationFrameId = null;
     let lastTimestamp = 0;
@@ -1379,13 +1611,21 @@
       saveCurrentScriptFromEditor();
       const current = getCurrentScript();
       if (!current || !current.content.trim()) {
-        showToast('Please add script text first');
+        showToast('Please enter script text first');
         return;
       }
 
-      // Render clean typography without raw markdown hashes (#), stars (*), or lines (---)
-      prompterText.innerHTML = cleanMarkdownToHTML(current.content);
-      prompterViewport.scrollTop = 0;
+      // Render sanitized HTML into teleprompter
+      prompterText.innerHTML = cleanMarkdownToSanitizedHTML(current.content);
+
+      // Start position management (Resume memory or Reverse initialization)
+      if (state.reverseScroll) {
+        prompterViewport.scrollTop = current.lastPosition > 0 
+          ? current.lastPosition 
+          : prompterViewport.scrollHeight - prompterViewport.clientHeight;
+      } else {
+        prompterViewport.scrollTop = current.lastPosition || 0;
+      }
 
       editorView.classList.remove('active');
       prompterView.classList.add('active');
@@ -1397,7 +1637,7 @@
       updateProgress();
       updatePlayButtonUI(false);
 
-      // Trigger 3-second animated countdown
+      // Text is ALREADY visible and anchored!
       runCountdown(() => {
         playPrompter();
       });
@@ -1405,6 +1645,11 @@
 
     function exitPrompter() {
       pausePrompter();
+      const current = getCurrentScript();
+      if (current) {
+        current.lastPosition = prompterViewport.scrollTop;
+        dbSaveScript(current);
+      }
       releaseWakeLock();
       prompterView.classList.remove('active');
       editorView.classList.add('active');
@@ -1437,6 +1682,10 @@
       countdownNumber.textContent = count;
 
       const timer = setInterval(() => {
+        if (!prompterView.classList.contains('active')) {
+          clearInterval(timer);
+          return;
+        }
         count--;
         if (count > 0) {
           countdownNumber.textContent = count;
@@ -1465,6 +1714,11 @@
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
       }
+      const current = getCurrentScript();
+      if (current) {
+        current.lastPosition = prompterViewport.scrollTop;
+        dbSaveScript(current);
+      }
       showHUD();
     }
 
@@ -1483,26 +1737,31 @@
       const delta = (currentTimestamp - lastTimestamp) / 1000;
       lastTimestamp = currentTimestamp;
 
-      // Speed mapping: 1 -> ~15 px/s, 100 -> ~360 px/s
-      const pxPerSecond = (state.speed * 3.4) + 12;
+      // Calibration: Convert WPM into precise vertical pixel speed based on typography
+      // Average line ~ 9 words. Pixel height per line ~ fontSize * 1.55.
+      const wordsPerSec = state.wpm / 60;
+      const lineHeightPx = state.fontSize * 1.55;
+      const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
       const movement = pxPerSecond * delta;
 
       if (state.reverseScroll) {
         prompterViewport.scrollTop -= movement;
+        if (prompterViewport.scrollTop <= 2) {
+          pausePrompter();
+          showToast('Reached beginning');
+          return;
+        }
       } else {
         prompterViewport.scrollTop += movement;
+        const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
+        if (prompterViewport.scrollTop >= maxScroll - 2) {
+          pausePrompter();
+          showToast('Finished script');
+          return;
+        }
       }
 
       updateProgress();
-
-      // Check reached bottom
-      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
-      if (!state.reverseScroll && prompterViewport.scrollTop >= maxScroll - 2) {
-        pausePrompter();
-        showToast('Finished script');
-        return;
-      }
-
       animationFrameId = requestAnimationFrame(scrollStep);
     }
 
@@ -1510,45 +1769,75 @@
       const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
       if (maxScroll <= 0) {
         progressFill.style.width = '0%';
+        if (scrubberSlider) scrubberSlider.value = 0;
+        if (scrubberPercentLabel) scrubberPercentLabel.textContent = '0%';
         return;
       }
-      const pct = Math.min(100, Math.max(0, (prompterViewport.scrollTop / maxScroll) * 100));
-      progressFill.style.width = `${pct}%`;
+      let pct = (prompterViewport.scrollTop / maxScroll) * 100;
+      if (state.reverseScroll) {
+        pct = 100 - pct;
+      }
+      const clampedPct = Math.min(100, Math.max(0, pct));
+      progressFill.style.width = `${clampedPct}%`;
+      if (scrubberSlider && document.activeElement !== scrubberSlider) {
+        scrubberSlider.value = clampedPct.toFixed(1);
+      }
+      if (scrubberPercentLabel) {
+        scrubberPercentLabel.textContent = `${Math.round(clampedPct)}%`;
+      }
+    }
+
+    function scrubToPercent(pctVal) {
+      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
+      let effectivePct = pctVal / 100;
+      if (state.reverseScroll) {
+        effectivePct = 1 - effectivePct;
+      }
+      prompterViewport.scrollTop = maxScroll * effectivePct;
+      updateProgress();
     }
 
     function scrubToPosition(e) {
       const rect = progressTrack.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
-      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      let pct = Math.max(0, Math.min(1, clickX / rect.width));
+      if (state.reverseScroll) {
+        pct = 1 - pct;
+      }
       const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
       prompterViewport.scrollTop = maxScroll * pct;
       updateProgress();
     }
 
     // -------------------------------------------------------------
-    // Screen Wake Lock API (Keeps mobile & laptop awake)
+    // 8. Screen Wake Lock Management (Robust Lifecycle Sync)
     // -------------------------------------------------------------
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
         try {
+          if (state.wakeLock) {
+            await state.wakeLock.release();
+            state.wakeLock = null;
+          }
           state.wakeLock = await navigator.wakeLock.request('screen');
           state.wakeLockWanted = true;
           statusBadge.classList.remove('inactive');
-          wakeLockStatusText.textContent = 'KEEP AWAKE: ON';
+          wakeLockStatusText.textContent = 'AWAKE: ON';
+
           state.wakeLock.addEventListener('release', () => {
+            state.wakeLock = null;
             if (!state.wakeLockWanted) {
               statusBadge.classList.add('inactive');
-              wakeLockStatusText.textContent = 'KEEP AWAKE: OFF';
+              wakeLockStatusText.textContent = 'AWAKE: OFF';
             }
           });
         } catch (err) {
-          console.warn('Wake Lock error:', err);
           statusBadge.classList.add('inactive');
-          wakeLockStatusText.textContent = 'AWAKE UNSUPPORTED';
+          wakeLockStatusText.textContent = 'AWAKE: OFF';
         }
       } else {
         statusBadge.classList.add('inactive');
-        wakeLockStatusText.textContent = 'AWAKE UNSUPPORTED';
+        wakeLockStatusText.textContent = 'UNSUPPORTED';
       }
     }
 
@@ -1558,7 +1847,7 @@
         state.wakeLock = null;
       }
       statusBadge.classList.add('inactive');
-      wakeLockStatusText.textContent = 'KEEP AWAKE: OFF';
+      wakeLockStatusText.textContent = 'AWAKE: OFF';
     }
 
     function toggleWakeLock() {
@@ -1573,7 +1862,6 @@
       }
     }
 
-    // Re-acquire lock if tab regains focus
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && prompterView.classList.contains('active') && state.wakeLockWanted) {
         requestWakeLock();
@@ -1581,7 +1869,7 @@
     });
 
     // -------------------------------------------------------------
-    // HUD & Inactivity Auto-Hide Engine
+    // 9. HUD Auto-Hide & Controls
     // -------------------------------------------------------------
     function showHUD() {
       studioHud.classList.remove('hud-hidden');
@@ -1604,9 +1892,6 @@
       }
     }
 
-    // -------------------------------------------------------------
-    // Mirror & Theme Modifiers
-    // -------------------------------------------------------------
     function updateMirrorTransform() {
       prompterViewport.classList.remove('prompter-mirror-x', 'prompter-mirror-y', 'prompter-mirror-xy');
       if (state.mirrorX && state.mirrorY) {
@@ -1616,7 +1901,6 @@
       } else if (state.mirrorY) {
         prompterViewport.classList.add('prompter-mirror-y');
       }
-
       document.getElementById('btnMirrorX').classList.toggle('active', state.mirrorX);
       document.getElementById('btnMirrorY').classList.toggle('active', state.mirrorY);
     }
@@ -1625,24 +1909,61 @@
       state.theme = themeName;
       document.body.classList.remove('theme-midnight', 'theme-paper', 'theme-sepia');
       document.body.classList.add(`theme-${themeName}`);
-
       document.querySelectorAll('.theme-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.theme === themeName);
       });
       saveSettings();
     }
 
-    // -------------------------------------------------------------
-    // Toast Utility
-    // -------------------------------------------------------------
-    let toastTimeout = null;
+    function setWPM(value) {
+      state.wpm = Math.max(60, Math.min(320, value));
+      speedSlider.value = state.wpm;
+      speedValueLabel.textContent = `${state.wpm} WPM`;
+      document.querySelectorAll('.wpm-preset-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.wpm, 10) === state.wpm);
+      });
+      updateStats();
+      saveSettings();
+    }
+
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state.wpm = parsed.wpm || 150;
+          state.fontSize = parsed.fontSize || 48;
+          state.readingWidth = parsed.readingWidth || 820;
+          state.theme = parsed.theme || 'midnight';
+          state.showEyelineGuide = parsed.showEyelineGuide !== undefined ? parsed.showEyelineGuide : true;
+        }
+      } catch (e) {}
+
+      applyTheme(state.theme);
+      setWPM(state.wpm);
+      fontSizeSlider.value = state.fontSize;
+      widthSlider.value = state.readingWidth;
+      prompterText.style.fontSize = `${state.fontSize}px`;
+      prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
+      if (!state.showEyelineGuide) eyelineGuide.classList.add('hide');
+    }
+
+    function saveSettings() {
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+          wpm: state.wpm,
+          fontSize: state.fontSize,
+          readingWidth: state.readingWidth,
+          theme: state.theme,
+          showEyelineGuide: state.showEyelineGuide
+        }));
+      } catch (e) {}
+    }
+
     function showToast(msg) {
       toast.textContent = msg;
       toast.classList.add('show');
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2200);
+      setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
     function escapeHtml(text) {
@@ -1652,18 +1973,17 @@
     }
 
     // -------------------------------------------------------------
-    // Touch & Swipe Engine for Mobile
+    // 10. Touch Gestures & Keyboard Bindings
     // -------------------------------------------------------------
     function setupTouchGestures() {
       let touchStartX = 0;
       let touchStartY = 0;
-      let touchStartTime = 0;
+      let lastTapTime = 0;
 
       prompterViewport.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          touchStartTime = Date.now();
           resetHudTimeout();
         }
       }, { passive: true });
@@ -1671,137 +1991,117 @@
       prompterViewport.addEventListener('touchend', (e) => {
         const deltaX = e.changedTouches[0].clientX - touchStartX;
         const deltaY = e.changedTouches[0].clientY - touchStartY;
-        const duration = Date.now() - touchStartTime;
+        const now = Date.now();
 
-        // Simple tap: Toggle Play/Pause
-        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && duration < 300) {
-          togglePlayPause();
+        // Single / Double Tap detection
+        if (Math.abs(deltaX) < 12 && Math.abs(deltaY) < 12) {
+          if (now - lastTapTime < 320) {
+            togglePlayPause();
+          } else {
+            resetHudTimeout();
+          }
+          lastTapTime = now;
           return;
         }
 
-        // Horizontal swipe: Adjust speed
-        if (Math.abs(deltaX) > 60 && Math.abs(deltaY) < 40) {
-          if (deltaX > 0) {
-            adjustSpeed(5);
-          } else {
-            adjustSpeed(-5);
-          }
+        // Swipe speed adjustment
+        if (Math.abs(deltaX) > 70 && Math.abs(deltaY) < 45) {
+          setWPM(state.wpm + (deltaX > 0 ? 10 : -10));
+          showToast(`${state.wpm} WPM`);
         }
       });
     }
 
-    function adjustSpeed(amount) {
-      state.speed = Math.max(1, Math.min(100, state.speed + amount));
-      speedSlider.value = state.speed;
-      speedValueLabel.textContent = state.speed;
-      saveSettings();
-      showToast(`Speed: ${state.speed}`);
-    }
-
-    // -------------------------------------------------------------
-    // Event Wiring
-    // -------------------------------------------------------------
     function setupEventListeners() {
-      // Editor & Navigation Controls
+      // Editor Actions
       document.getElementById('btnStartPrompter').addEventListener('click', startPrompter);
       document.getElementById('btnExitPrompter').addEventListener('click', exitPrompter);
       document.getElementById('btnNewScript').addEventListener('click', () => createNewScript());
       document.getElementById('btnDeleteCurrent').addEventListener('click', deleteCurrentScript);
+      document.getElementById('btnExportSingle').addEventListener('click', exportSingleScriptMarkdown);
 
-      // Auto-save on typing in editor
       scriptTitleInput.addEventListener('input', () => {
-        saveCurrentScriptFromEditor();
+        triggerDebouncedSave();
         renderScriptList();
       });
       scriptContentInput.addEventListener('input', () => {
-        saveCurrentScriptFromEditor();
+        triggerDebouncedSave();
         updateStats();
         renderScriptList();
       });
 
-      // Mobile Sidebar Drawer Toggle
-      document.getElementById('btnToggleSidebar').addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-      });
+      document.getElementById('btnToggleSidebar').addEventListener('click', () => sidebar.classList.toggle('open'));
 
-      // File Import Handlers
-      const triggerBtn = document.getElementById('btnTriggerImport');
-      triggerBtn.addEventListener('click', () => fileInput.click());
+      // File Imports & Backups
+      document.getElementById('btnTriggerImport').addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) handleFileImport(e.target.files[0]);
       });
 
-      // Drag and Drop Zone
-      ['dragenter', 'dragover'].forEach(name => {
-        editorDropZone.addEventListener(name, (e) => {
-          e.preventDefault();
-          dropOverlay.classList.add('drag-over');
-        });
+      document.getElementById('btnBackupExport').addEventListener('click', exportAllScriptsBackup);
+      document.getElementById('btnBackupImport').addEventListener('click', () => backupFileInput.click());
+      backupFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleBackupRestore(e.target.files[0]);
       });
 
-      ['dragleave', 'drop'].forEach(name => {
-        editorDropZone.addEventListener(name, (e) => {
-          e.preventDefault();
-          dropOverlay.classList.remove('drag-over');
-        });
-      });
-
+      // Drag and Drop
+      ['dragenter', 'dragover'].forEach(n => editorDropZone.addEventListener(n, (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add('drag-over');
+      }));
+      ['dragleave', 'drop'].forEach(n => editorDropZone.addEventListener(n, (e) => {
+        e.preventDefault();
+        dropOverlay.classList.remove('drag-over');
+      }));
       editorDropZone.addEventListener('drop', (e) => {
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          handleFileImport(e.dataTransfer.files[0]);
-        }
+        if (e.dataTransfer.files.length) handleFileImport(e.dataTransfer.files[0]);
       });
 
       // Prompter HUD Controls
       document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
       statusBadge.addEventListener('click', toggleWakeLock);
-      
+
       document.getElementById('btnResetScroll').addEventListener('click', () => {
-        prompterViewport.scrollTop = 0;
+        prompterViewport.scrollTop = state.reverseScroll 
+          ? prompterViewport.scrollHeight - prompterViewport.clientHeight 
+          : 0;
         updateProgress();
-        showToast('Reset to start');
+        showToast('Restarted');
       });
 
       document.getElementById('btnMirrorX').addEventListener('click', () => {
         state.mirrorX = !state.mirrorX;
         updateMirrorTransform();
-        showToast(`Horizontal Mirror: ${state.mirrorX ? 'ON' : 'OFF'}`);
       });
-
       document.getElementById('btnMirrorY').addEventListener('click', () => {
         state.mirrorY = !state.mirrorY;
         updateMirrorTransform();
-        showToast(`Vertical Mirror: ${state.mirrorY ? 'ON' : 'OFF'}`);
       });
 
       document.getElementById('btnReverseDirection').addEventListener('click', () => {
         state.reverseScroll = !state.reverseScroll;
         document.getElementById('btnReverseDirection').classList.toggle('active', state.reverseScroll);
-        showToast(`Scroll Direction: ${state.reverseScroll ? 'UP' : 'DOWN'}`);
+        updateProgress();
+        showToast(`Scroll: ${state.reverseScroll ? 'UPWARD' : 'DOWNWARD'}`);
       });
 
-      speedSlider.addEventListener('input', (e) => {
-        state.speed = parseInt(e.target.value, 10);
-        speedValueLabel.textContent = state.speed;
-        saveSettings();
+      speedSlider.addEventListener('input', (e) => setWPM(parseInt(e.target.value, 10)));
+      scrubberSlider.addEventListener('input', (e) => {
+        scrubToPercent(parseFloat(e.target.value));
+        resetHudTimeout();
       });
-
       fontSizeSlider.addEventListener('input', (e) => {
         state.fontSize = parseInt(e.target.value, 10);
         prompterText.style.fontSize = `${state.fontSize}px`;
         saveSettings();
       });
-
       widthSlider.addEventListener('input', (e) => {
         state.readingWidth = parseInt(e.target.value, 10);
         prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
         saveSettings();
       });
 
-      document.getElementById('btnToggleSettings').addEventListener('click', () => {
-        settingsDrawer.classList.toggle('hidden');
-      });
-
+      document.getElementById('btnToggleSettings').addEventListener('click', () => settingsDrawer.classList.toggle('hidden'));
       document.getElementById('btnToggleGuide').addEventListener('click', () => {
         state.showEyelineGuide = !state.showEyelineGuide;
         eyelineGuide.classList.toggle('hide', !state.showEyelineGuide);
@@ -1809,39 +2109,31 @@
         saveSettings();
       });
 
-      document.querySelectorAll('.theme-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          applyTheme(chip.dataset.theme);
-        });
-      });
+      document.querySelectorAll('.theme-chip').forEach(c => c.addEventListener('click', () => applyTheme(c.dataset.theme)));
+      document.querySelectorAll('.wpm-preset-btn').forEach(b => b.addEventListener('click', () => setWPM(parseInt(b.dataset.wpm, 10))));
 
-      // Fullscreen
       document.getElementById('btnFullscreen').addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        } else {
-          document.exitFullscreen().catch(() => {});
-        }
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+        else document.exitFullscreen().catch(() => {});
       });
 
-      // Interactive Scrubber
       progressTrack.addEventListener('click', scrubToPosition);
-
-      // Prompter Mouse Movement: Reveal HUD on motion
       prompterView.addEventListener('mousemove', resetHudTimeout);
-
-      // Manual wheel scroll updates progress bar
       prompterViewport.addEventListener('scroll', updateProgress, { passive: true });
 
-      // Keyboard Hotkeys
+      // Shortcuts Modal
+      document.getElementById('btnShortcutsModal').addEventListener('click', () => shortcutsModal.classList.add('show'));
+      document.getElementById('btnCloseModal').addEventListener('click', () => shortcutsModal.classList.remove('show'));
+      shortcutsModal.addEventListener('click', (e) => {
+        if (e.target === shortcutsModal) shortcutsModal.classList.remove('show');
+      });
+
+      // Hotkey Navigator
       window.addEventListener('keydown', handleKeyNavigation);
     }
 
     function handleKeyNavigation(e) {
-      // Don't intercept typing in inputs
-      if (document.activeElement === scriptTitleInput || document.activeElement === scriptContentInput) {
-        return;
-      }
+      if (document.activeElement === scriptTitleInput || document.activeElement === scriptContentInput) return;
 
       if (prompterView.classList.contains('active')) {
         switch (e.code) {
@@ -1851,27 +2143,27 @@
             break;
           case 'ArrowUp':
             e.preventDefault();
-            adjustSpeed(2);
+            setWPM(state.wpm + 5);
             break;
           case 'ArrowDown':
             e.preventDefault();
-            adjustSpeed(-2);
+            setWPM(state.wpm - 5);
             break;
           case 'ArrowRight':
             e.preventDefault();
-            prompterViewport.scrollTop += 120;
+            prompterViewport.scrollTop += 140;
             updateProgress();
             break;
           case 'ArrowLeft':
             e.preventDefault();
-            prompterViewport.scrollTop -= 120;
+            prompterViewport.scrollTop -= 140;
             updateProgress();
             break;
           case 'KeyR':
             e.preventDefault();
-            prompterViewport.scrollTop = 0;
+            prompterViewport.scrollTop = state.reverseScroll ? prompterViewport.scrollHeight - prompterViewport.clientHeight : 0;
             updateProgress();
-            showToast('Reset to top');
+            showToast('Restarted');
             break;
           case 'KeyM':
             e.preventDefault();
@@ -1880,11 +2172,8 @@
             break;
           case 'KeyF':
             e.preventDefault();
-            if (!document.fullscreenElement) {
-              document.documentElement.requestFullscreen().catch(() => {});
-            } else {
-              document.exitFullscreen().catch(() => {});
-            }
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+            else document.exitFullscreen().catch(() => {});
             break;
           case 'Escape':
             e.preventDefault();
@@ -1892,15 +2181,12 @@
             break;
         }
       } else {
-        // In Editor View
-        if ((e.metaKey || e.ctrlKey) && e.code === 'Enter') {
-          e.preventDefault();
-          startPrompter();
+        if (e.key === '?') {
+          shortcutsModal.classList.toggle('show');
         }
       }
     }
 
-    // Start on DOM ready
     window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
