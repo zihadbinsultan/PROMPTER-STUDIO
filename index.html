@@ -596,6 +596,84 @@
       box-shadow: none;
     }
 
+    /* Top-Left Dynamic Voice Cruise Control Pill */
+    .voice-cruise-hud {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #8e8e93;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: all 0.25s var(--ease-apple);
+      user-select: none;
+    }
+
+    .voice-cruise-hud:hover {
+      background: rgba(35, 35, 40, 0.95);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .voice-cruise-hud.active {
+      color: #f5f5f7;
+      border-color: rgba(41, 151, 255, 0.6);
+      box-shadow: 0 0 18px rgba(41, 151, 255, 0.25);
+    }
+
+    .voice-wave {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 12px;
+    }
+
+    .voice-wave-bar {
+      width: 2.5px;
+      height: 4px;
+      border-radius: 2px;
+      background: #8e8e93;
+      transition: height 0.15s ease, background-color 0.2s ease;
+    }
+
+    .voice-cruise-hud.active .voice-wave-bar {
+      background: #2997ff;
+      animation: wavePulse 1s ease-in-out infinite alternate;
+    }
+
+    .voice-cruise-hud.active .voice-wave-bar:nth-child(2) { animation-delay: 0.2s; }
+    .voice-cruise-hud.active .voice-wave-bar:nth-child(3) { animation-delay: 0.4s; }
+    .voice-cruise-hud.active .voice-wave-bar:nth-child(4) { animation-delay: 0.15s; }
+
+    @keyframes wavePulse {
+      0% { height: 4px; }
+      100% { height: 13px; }
+    }
+
+    .voice-wpm-badge {
+      display: none;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(41, 151, 255, 0.25);
+      color: #64b5ff;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .voice-cruise-hud.active .voice-wpm-badge {
+      display: inline-block;
+    }
+
     /* Transparent Countdown Overlay: Prompter text stays 100% visible */
     .countdown-overlay {
       position: absolute;
@@ -1059,6 +1137,19 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       <div id="progressFill" class="prompter-progress-fill"></div>
     </div>
 
+    <!-- Top-Left Dynamic Voice Cruise Control Pill -->
+    <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise Control">
+      <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
+      <span id="voiceCruiseLabel">VOICE CRUISE: OFF</span>
+      <div class="voice-wave">
+        <span class="voice-wave-bar"></span>
+        <span class="voice-wave-bar"></span>
+        <span class="voice-wave-bar"></span>
+        <span class="voice-wave-bar"></span>
+      </div>
+      <span id="voiceLiveWpm" class="voice-wpm-badge">-- WPM</span>
+    </div>
+
     <!-- Apple Minimalist Keep-Awake Pill (No Eye Icon) -->
     <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display sleep prevention">
       <div class="status-dot" id="statusDot"></div>
@@ -1297,7 +1388,10 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       theme: 'midnight',
       wakeLock: null,
       wakeLockWanted: true,
-      isCountdownActive: false
+      isCountdownActive: false,
+      hasStartedFirstTake: false,
+      voiceCruiseActive: false,
+      currentDynamicWpm: 150
     };
 
     // DOM Elements
@@ -1334,6 +1428,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     const btnPlayPause = document.getElementById('btnPlayPause');
     const statusBadge = document.getElementById('statusBadge');
     const wakeLockStatusText = document.getElementById('wakeLockStatusText');
+    const voiceCruisePill = document.getElementById('voiceCruisePill');
+    const voiceCruiseLabel = document.getElementById('voiceCruiseLabel');
+    const voiceLiveWpm = document.getElementById('voiceLiveWpm');
     const shortcutsModal = document.getElementById('shortcutsModal');
     const toast = document.getElementById('toast');
 
@@ -1670,10 +1767,262 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       updateProgress();
       updatePlayButtonUI(false);
 
-      // Text is ALREADY visible and anchored!
-      runCountdown(() => {
-        playPrompter();
-      });
+      // Reset first-take state: DO NOT auto-countdown; wait for user input (Space or Play button)
+      state.hasStartedFirstTake = false;
+      showToast('Press Space or Play to begin');
+    }
+
+    function exitPrompter() {
+      pausePrompter();
+      if (state.voiceCruiseActive) {
+        toggleVoiceCruise();
+      }
+      const current = getCurrentScript();
+      if (current) {
+        current.lastPosition = prompterViewport.scrollTop;
+        dbSaveScript(current);
+      }
+      releaseWakeLock();
+      prompterView.classList.remove('active');
+      editorView.classList.add('active');
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function updatePlayButtonUI(isPlaying) {
+      if (isPlaying) {
+        btnPlayPause.innerHTML = `<i data-lucide="pause" style="width: 22px; height: 22px;"></i>`;
+        btnPlayPause.style.background = '#2997ff';
+        btnPlayPause.style.color = '#ffffff';
+        btnPlayPause.style.boxShadow = '0 0 20px rgba(41, 151, 255, 0.6)';
+        btnPlayPause.title = 'Pause (Space)';
+      } else {
+        btnPlayPause.innerHTML = `<i data-lucide="play" style="width: 22px; height: 22px; margin-left: 2px;"></i>`;
+        btnPlayPause.style.background = '#ffffff';
+        btnPlayPause.style.color = '#000000';
+        btnPlayPause.style.boxShadow = '0 4px 18px rgba(255, 255, 255, 0.3)';
+        btnPlayPause.title = 'Play (Space)';
+      }
+      lucide.createIcons();
+    }
+
+    function runCountdown(callback) {
+      state.isCountdownActive = true;
+      let count = 3;
+      countdownOverlay.classList.add('show');
+      countdownNumber.textContent = count;
+
+      const timer = setInterval(() => {
+        if (!prompterView.classList.contains('active')) {
+          clearInterval(timer);
+          countdownOverlay.classList.remove('show');
+          state.isCountdownActive = false;
+          return;
+        }
+        count--;
+        if (count > 0) {
+          countdownNumber.textContent = count;
+        } else {
+          clearInterval(timer);
+          countdownOverlay.classList.remove('show');
+          state.isCountdownActive = false;
+          if (callback) callback();
+        }
+      }, 900);
+    }
+
+    function playPrompter() {
+      if (state.isPlaying) return;
+      state.isPlaying = true;
+      updatePlayButtonUI(true);
+      lastTimestamp = performance.now();
+      animationFrameId = requestAnimationFrame(scrollStep);
+      resetHudTimeout();
+    }
+
+    function pausePrompter() {
+      state.isPlaying = false;
+      updatePlayButtonUI(false);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      const current = getCurrentScript();
+      if (current) {
+        current.lastPosition = prompterViewport.scrollTop;
+        dbSaveScript(current);
+      }
+      showHUD();
+    }
+
+    function togglePlayPause() {
+      if (state.isCountdownActive) return;
+
+      if (!state.isPlaying) {
+        // Run 3-2-1 countdown on initial start
+        if (!state.hasStartedFirstTake) {
+          state.hasStartedFirstTake = true;
+          runCountdown(() => {
+            playPrompter();
+          });
+        } else {
+          playPrompter();
+        }
+      } else {
+        pausePrompter();
+      }
+    }
+
+    function scrollStep(currentTimestamp) {
+      if (!state.isPlaying) return;
+
+      const delta = (currentTimestamp - lastTimestamp) / 1000;
+      lastTimestamp = currentTimestamp;
+
+      // Determine active WPM: blend towards dynamic speech WPM if Voice Cruise is active
+      let targetWpm = state.wpm;
+      if (state.voiceCruiseActive) {
+        // Ease towards dynamic WPM
+        state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.08;
+        targetWpm = state.currentDynamicWpm;
+      }
+
+      // Calibration: Convert WPM into precise vertical pixel speed based on typography
+      // Average line ~ 8.5 words. Pixel height per line ~ fontSize * 1.55.
+      const wordsPerSec = targetWpm / 60;
+      const lineHeightPx = state.fontSize * 1.55;
+      const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
+      const movement = pxPerSecond * delta;
+
+      if (state.reverseScroll) {
+        prompterViewport.scrollTop -= movement;
+        if (prompterViewport.scrollTop <= 2) {
+          pausePrompter();
+          showToast('Reached beginning');
+          return;
+        }
+      } else {
+        prompterViewport.scrollTop += movement;
+        const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
+        if (prompterViewport.scrollTop >= maxScroll - 2) {
+          pausePrompter();
+          showToast('Finished script');
+          return;
+        }
+      }
+
+      updateProgress();
+      animationFrameId = requestAnimationFrame(scrollStep);
+    }
+
+    // -------------------------------------------------------------
+    // 8. Dynamic Voice Cruise Engine (Web Speech API)
+    // -------------------------------------------------------------
+    let speechRecognizer = null;
+    let spokenWordsTimeline = [];
+    let targetVoiceWpm = 150;
+    let silenceTimer = null;
+
+    function initSpeechEngine() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return null;
+      }
+      const recognizer = new SpeechRecognition();
+      recognizer.continuous = true;
+      recognizer.interimResults = true;
+      recognizer.lang = 'en-US';
+
+      recognizer.onresult = (event) => {
+        const now = performance.now();
+        let transcriptChunk = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcriptChunk += event.results[i][0].transcript + ' ';
+        }
+        const words = transcriptChunk.trim().split(/\s+/).filter(w => w.length > 0);
+        if (words.length > 0) {
+          // Push words with timestamp
+          for (let k = 0; k < words.length; k++) {
+            spokenWordsTimeline.push(now);
+          }
+          // Filter to words in last 4 seconds
+          spokenWordsTimeline = spokenWordsTimeline.filter(t => now - t <= 4000);
+
+          if (spokenWordsTimeline.length >= 3) {
+            // Calculate spoken words per minute
+            const durationSec = Math.max(1, (now - spokenWordsTimeline[0]) / 1000);
+            const calculatedWpm = Math.round((spokenWordsTimeline.length / durationSec) * 60);
+            targetVoiceWpm = Math.max(50, Math.min(280, calculatedWpm));
+            voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
+          }
+
+          // Reset silence decay timer
+          if (silenceTimer) clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => {
+            if (state.voiceCruiseActive) {
+              // Smoothly glide down speed when user pauses talking
+              targetVoiceWpm = Math.max(25, state.wpm * 0.3);
+              voiceLiveWpm.textContent = 'PAUSED';
+            }
+          }, 2400);
+        }
+      };
+
+      recognizer.onerror = (e) => {
+        if (e.error === 'not-allowed') {
+          showToast('Microphone access denied');
+          stopVoiceCruise();
+        }
+      };
+
+      recognizer.onend = () => {
+        if (state.voiceCruiseActive) {
+          try { recognizer.start(); } catch (err) {}
+        }
+      };
+
+      return recognizer;
+    }
+
+    function toggleVoiceCruise() {
+      if (!speechRecognizer) {
+        speechRecognizer = initSpeechEngine();
+      }
+      if (!speechRecognizer) {
+        showToast('Speech recognition not supported in this browser');
+        return;
+      }
+
+      state.voiceCruiseActive = !state.voiceCruiseActive;
+
+      if (state.voiceCruiseActive) {
+        try {
+          speechRecognizer.start();
+          voiceCruisePill.classList.add('active');
+          voiceCruiseLabel.textContent = 'VOICE CRUISE: ON';
+          spokenWordsTimeline = [];
+          targetVoiceWpm = state.wpm;
+          state.currentDynamicWpm = state.wpm;
+          voiceLiveWpm.textContent = `${state.wpm} WPM`;
+          showToast('Voice Cruise Active: Speak to guide speed');
+        } catch (e) {
+          console.warn(e);
+        }
+      } else {
+        stopVoiceCruise();
+      }
+    }
+
+    function stopVoiceCruise() {
+      state.voiceCruiseActive = false;
+      if (speechRecognizer) {
+        try { speechRecognizer.stop(); } catch (e) {}
+      }
+      voiceCruisePill.classList.remove('active');
+      voiceCruiseLabel.textContent = 'VOICE CRUISE: OFF';
+      voiceLiveWpm.textContent = '-- WPM';
+      if (silenceTimer) clearTimeout(silenceTimer);
     }
 
     function exitPrompter() {
@@ -2093,6 +2442,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       // Prompter HUD Controls
       document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
       statusBadge.addEventListener('click', toggleWakeLock);
+      voiceCruisePill.addEventListener('click', toggleVoiceCruise);
 
       document.getElementById('btnResetScroll').addEventListener('click', () => {
         prompterViewport.scrollTop = state.reverseScroll 
