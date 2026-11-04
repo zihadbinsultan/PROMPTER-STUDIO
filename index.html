@@ -3,73 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>PROMPTER — Apple & Studio Teleprompter</title>
+  <title>PROMPTER — Apple Studio Teleprompter</title>
   
-  <!-- Apple Web App & PWA Meta -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000">
 
-  <!-- Lucide Icons -->
+  <!-- Core CDNs -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- DOMPurify for Bulletproof HTML Sanitization -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/dompurify.min.js"></script>
-
-  <!-- Marked.js for Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  
-  <!-- PDF.js for Browser-native PDF text extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
   </script>
-
-  <!-- Mammoth.js for .docx extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
   <style>
-    /* Apple SF Pro Typography & Theme Tokens */
     :root {
       --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
-      --bg-midnight: #000000;
-      --surface-midnight: rgba(22, 22, 24, 0.75);
-      --surface-elevated: rgba(28, 28, 32, 0.88);
-      --border-midnight: rgba(255, 255, 255, 0.12);
-      --text-main: #f5f5f7;
-      --text-muted: #86868b;
       --accent: #2997ff;
-      --accent-rgb: 41, 151, 255;
-      --focus-guide: rgba(41, 151, 255, 0.85);
-      --danger: #ff453a;
       --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     body.theme-midnight {
       --bg-main: #000000;
       --text-prompter: #ffffff;
-      --text-dim: #555555;
-      --card-bg: rgba(24, 24, 28, 0.65);
+      --surface-elevated: rgba(24, 24, 28, 0.88);
+      --border-soft: rgba(255, 255, 255, 0.12);
       --focus-guide: rgba(41, 151, 255, 0.85);
-      --mask-grad: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 55%, rgba(0,0,0,0.85) 100%);
+      --mask-grad: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.05) 32%, rgba(0,0,0,0.05) 55%, rgba(0,0,0,0.85) 100%);
     }
 
     body.theme-paper {
       --bg-main: #fbfbfd;
       --text-prompter: #1d1d1f;
-      --text-dim: #c7c7cc;
-      --card-bg: rgba(240, 240, 244, 0.8);
-      --focus-guide: rgba(0, 113, 227, 0.75);
-      --mask-grad: linear-gradient(180deg, rgba(251,251,253,0.88) 0%, rgba(251,251,253,0.08) 35%, rgba(251,251,253,0.08) 55%, rgba(251,251,253,0.88) 100%);
+      --surface-elevated: rgba(240, 240, 244, 0.92);
+      --border-soft: rgba(0, 0, 0, 0.12);
+      --focus-guide: rgba(0, 113, 227, 0.8);
+      --mask-grad: linear-gradient(180deg, rgba(251,251,253,0.88) 0%, rgba(251,251,253,0.08) 32%, rgba(251,251,253,0.08) 55%, rgba(251,251,253,0.88) 100%);
     }
 
     body.theme-sepia {
       --bg-main: #181412;
       --text-prompter: #f5ebd9;
-      --text-dim: #4d443c;
-      --card-bg: rgba(34, 28, 25, 0.75);
+      --surface-elevated: rgba(34, 28, 25, 0.9);
+      --border-soft: rgba(230, 160, 60, 0.2);
       --focus-guide: rgba(230, 160, 60, 0.85);
-      --mask-grad: linear-gradient(180deg, rgba(24,20,18,0.88) 0%, rgba(24,20,18,0.08) 35%, rgba(24,20,18,0.08) 55%, rgba(24,20,18,0.88) 100%);
+      --mask-grad: linear-gradient(180deg, rgba(24,20,18,0.88) 0%, rgba(24,20,18,0.08) 32%, rgba(24,20,18,0.08) 55%, rgba(24,20,18,0.88) 100%);
     }
 
     * {
@@ -81,94 +64,48 @@
 
     body {
       font-family: var(--font-stack);
-      background-color: var(--bg-main, #000000);
-      color: var(--text-main);
+      background-color: #000000;
+      color: #f5f5f7;
       overflow: hidden;
       height: 100vh;
       height: 100dvh;
       width: 100vw;
-      transition: background-color 0.4s var(--ease-apple);
     }
 
-    input, textarea, [contenteditable="true"] {
-      user-select: text;
+    input, textarea {
+      font-family: inherit;
     }
 
-    .glass {
-      background: var(--surface-midnight);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      border: 1px solid var(--border-midnight);
-    }
-
-    .glass-pill {
-      background: rgba(30, 30, 34, 0.85);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-    }
-
-    .view {
-      position: absolute;
+    /* Primary Views */
+    .view-screen {
+      position: fixed;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none; /* Controlled strictly via display property */
+    }
+
+    #editorView {
       display: flex;
       flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s var(--ease-apple), transform 0.3s var(--ease-apple);
-    }
-
-    .view.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: scale(1);
-    }
-
-    /* ========================================================= */
-    /* 1. STUDIO EDITOR & SCRIPT LIBRARY                         */
-    /* ========================================================= */
-    #editorView {
       background: #09090b;
-      color: #f5f5f7;
-    }
-
-    .nav-header {
-      height: 60px;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(12, 12, 14, 0.85);
-      backdrop-filter: blur(20px);
       z-index: 10;
     }
 
-    .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 1.15rem;
-      letter-spacing: -0.02em;
+    #prompterView {
+      display: none;
+      flex-direction: column;
+      background-color: var(--bg-main, #000000);
+      z-index: 20;
     }
 
-    .brand-badge {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      background: linear-gradient(135deg, #2997ff, #147ce5);
-      color: #fff;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font-weight: 600;
-    }
-
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    /* Common Buttons & Glass */
+    .glass-pill {
+      background: rgba(28, 28, 32, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
     .btn {
@@ -176,20 +113,21 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 8px 15px;
+      padding: 8px 16px;
       font-size: 0.85rem;
       font-weight: 500;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.08);
       color: #f5f5f7;
       cursor: pointer;
       transition: all 0.2s var(--ease-apple);
+      user-select: none;
     }
 
     .btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255,255,255,0.22);
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255,255,255,0.24);
     }
 
     .btn:active {
@@ -216,15 +154,56 @@
       border-radius: 50%;
     }
 
+    /* Header Nav */
+    .nav-header {
+      height: 60px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 12, 14, 0.9);
+      backdrop-filter: blur(20px);
+      z-index: 30;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: #2997ff;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Workspace */
     .workspace {
       display: flex;
       flex: 1;
       height: calc(100% - 60px);
+      position: relative;
       overflow: hidden;
     }
 
     .sidebar {
-      width: 320px;
+      width: 300px;
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
@@ -244,12 +223,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--text-muted);
-    }
-
-    .sidebar-tools {
-      display: flex;
-      gap: 6px;
+      color: #86868b;
     }
 
     .script-list {
@@ -264,8 +238,6 @@
     .script-item {
       padding: 12px 14px;
       border-radius: 12px;
-      background: transparent;
-      border: 1px solid transparent;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -279,7 +251,7 @@
 
     .script-item.active {
       background: rgba(41, 151, 255, 0.12);
-      border-color: rgba(41, 151, 255, 0.3);
+      border: 1px solid rgba(41, 151, 255, 0.3);
     }
 
     .script-item-title {
@@ -292,23 +264,16 @@
     }
 
     .script-item-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: #86868b;
     }
 
-    .script-item.active .script-item-title {
-      color: #64b5ff;
-    }
-
+    /* Editor Stage */
     .editor-stage {
       flex: 1;
       display: flex;
       flex-direction: column;
       background: #000000;
-      position: relative;
       overflow-y: auto;
       padding: 24px 32px 40px;
     }
@@ -322,10 +287,10 @@
       background: #141417;
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-      position: relative;
       min-height: 580px;
       flex: 1;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
     }
 
     .editor-card-header {
@@ -345,53 +310,34 @@
       color: #ffffff;
       outline: none;
       width: 100%;
-      letter-spacing: -0.015em;
-    }
-
-    .title-input::placeholder {
-      color: rgba(255, 255, 255, 0.28);
     }
 
     .editor-stats-bar {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       font-size: 0.8rem;
-      color: var(--text-muted);
+      color: #86868b;
       white-space: nowrap;
-    }
-
-    .save-status-indicator {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #34c759;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .save-status-indicator.saving {
-      color: #ffd60a;
     }
 
     .editor-container {
       flex: 1;
       padding: 24px;
-      position: relative;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
 
     .editor-guidance-pill {
       align-self: flex-start;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       padding: 5px 12px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
       font-size: 0.72rem;
-      letter-spacing: 0.03em;
-      color: var(--text-muted);
+      color: #86868b;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -400,19 +346,17 @@
     .script-textarea {
       flex: 1;
       width: 100%;
-      min-height: 400px;
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
+      min-height: 420px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
       padding: 20px;
       outline: none;
       color: #f5f5f7;
       font-size: 1.15rem;
-      line-height: 1.75;
-      font-family: var(--font-stack);
+      line-height: 1.7;
       resize: none;
       white-space: pre-wrap;
-      transition: border-color 0.2s;
     }
 
     .script-textarea:focus {
@@ -420,22 +364,18 @@
       box-shadow: 0 0 0 2px rgba(41, 151, 255, 0.15);
     }
 
-    .script-textarea::placeholder {
-      color: rgba(255, 255, 255, 0.28);
-    }
-
     .drop-overlay {
       position: absolute;
       inset: 12px;
       border: 2px dashed #2997ff;
       border-radius: 16px;
-      background: rgba(41, 151, 255, 0.09);
-      backdrop-filter: blur(10px);
+      background: rgba(41, 151, 255, 0.08);
+      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
@@ -447,23 +387,9 @@
       pointer-events: auto;
     }
 
-    #fileInput, #backupFileInput {
-      display: none;
-    }
-
     /* ========================================================= */
     /* 2. LIVE TELEPROMPTER VIEW                                 */
     /* ========================================================= */
-    #prompterView {
-      background-color: var(--bg-main);
-      cursor: none;
-      touch-action: pan-y;
-    }
-
-    #prompterView.cursor-show {
-      cursor: default;
-    }
-
     .prompter-viewport {
       width: 100%;
       height: 100%;
@@ -479,21 +405,6 @@
       display: none;
     }
 
-    /* Focus Vignette Mask: Dims text outside the reading eyeline */
-    .prompter-vignette-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 15;
-      background: var(--mask-grad);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .prompter-vignette-overlay.active {
-      opacity: 1;
-    }
-
     .prompter-mirror-x { transform: scaleX(-1); }
     .prompter-mirror-y { transform: scaleY(-1); }
     .prompter-mirror-xy { transform: scale(-1, -1); }
@@ -503,27 +414,50 @@
       width: 100%;
       max-width: 820px;
       padding: 42vh 32px 55vh;
-      transition: max-width 0.25s var(--ease-apple);
+      transition: max-width 0.2s var(--ease-apple);
     }
 
     .prompter-text {
-      color: var(--text-prompter);
+      color: var(--text-prompter, #ffffff);
       font-size: 48px;
       line-height: 1.5;
       font-weight: 600;
       letter-spacing: -0.01em;
       white-space: pre-wrap;
       word-break: break-word;
-      transition: font-size 0.2s, line-height 0.2s;
     }
 
+    .prompter-text h1, .prompter-text h2, .prompter-text h3 {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 0.8em;
+      margin-bottom: 0.3em;
+      color: #2997ff;
+    }
+    .prompter-text h1 { font-size: 1.35em; }
+    .prompter-text h2 { font-size: 1.2em; }
+    .prompter-text h3 { font-size: 1.08em; }
+    .prompter-text p {
+      margin-top: 0;
+      margin-bottom: 0.75em;
+    }
+    .prompter-text p:last-child {
+      margin-bottom: 0;
+    }
+    .prompter-text hr {
+      border: none;
+      border-top: 2px dashed rgba(255,255,255,0.2);
+      margin: 1.2em 0;
+    }
+
+    /* Eyeline Guide */
     .eyeline-guide {
       position: absolute;
       top: 42%;
       left: 0;
       width: 100%;
       height: 2px;
-      background: var(--focus-guide);
+      background: var(--focus-guide, rgba(41, 151, 255, 0.85));
       pointer-events: none;
       z-index: 20;
       box-shadow: 0 0 16px var(--focus-guide);
@@ -548,26 +482,22 @@
     .eyeline-bracket-left { border-right: none; border-radius: 6px 0 0 6px; }
     .eyeline-bracket-right { border-left: none; border-radius: 0 6px 6px 0; }
 
-    .prompter-progress-track {
+    /* Vignette Mask */
+    .prompter-vignette-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.12);
-      z-index: 55;
-      cursor: pointer;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+      background: var(--mask-grad);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .prompter-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: #2997ff;
-      box-shadow: 0 0 10px rgba(41, 151, 255, 0.8);
-      transition: width 0.1s linear;
+    .prompter-vignette-overlay.active {
+      opacity: 1;
     }
 
-    /* Top Status Bar & Session Telemetry */
+    /* Top Bar */
     .prompter-top-bar {
       position: absolute;
       top: 14px;
@@ -584,85 +514,7 @@
       pointer-events: auto;
     }
 
-    .session-timer-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: rgba(22, 22, 25, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #f5f5f7;
-      letter-spacing: 0.02em;
-    }
-
-    .session-timer-rec {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ff453a;
-      opacity: 0.4;
-      transition: opacity 0.3s;
-    }
-
-    .session-timer-rec.recording {
-      opacity: 1;
-      animation: pulseRecord 1.2s infinite;
-    }
-
-    @keyframes pulseRecord {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.3; transform: scale(0.85); }
-    }
-
-    /* Minimalist Apple Keep-Awake Status Pill */
-    .prompter-status-tag {
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(22, 22, 25, 0.85);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #34c759;
-      cursor: pointer;
-      transition: all 0.25s var(--ease-apple);
-      user-select: none;
-    }
-
-    .prompter-status-tag:hover {
-      background: rgba(35, 35, 40, 0.95);
-      border-color: rgba(255, 255, 255, 0.28);
-    }
-
-    .prompter-status-tag.inactive {
-      color: #8e8e93;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #34c759;
-      box-shadow: 0 0 8px #34c759;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-
-    .prompter-status-tag.inactive .status-dot {
-      background: #8e8e93;
-      box-shadow: none;
-    }
-
-    /* Top-Left Dynamic Voice Cruise Control Pill & Calibration Flyout */
+    /* Top Left Voice Cruise */
     .voice-control-wrapper {
       position: relative;
       display: flex;
@@ -690,11 +542,6 @@
       user-select: none;
     }
 
-    .voice-cruise-hud:hover {
-      background: rgba(35, 35, 40, 0.95);
-      border-color: rgba(255, 255, 255, 0.28);
-    }
-
     .voice-cruise-hud.active {
       color: #f5f5f7;
       border-color: rgba(41, 151, 255, 0.65);
@@ -714,7 +561,7 @@
       height: 4px;
       border-radius: 2px;
       background: #8e8e93;
-      transition: height 0.08s ease, background-color 0.2s ease;
+      transition: height 0.08s ease;
     }
 
     .voice-cruise-hud.active .voice-wave-bar {
@@ -735,33 +582,21 @@
       display: inline-block;
     }
 
-    /* Voice Sensitivity Popover & Live VU Meter */
     .voice-calib-popover {
       padding: 10px 14px;
       border-radius: 14px;
       background: rgba(24, 24, 28, 0.94);
       backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.16);
       box-shadow: 0 12px 30px rgba(0,0,0,0.65);
       display: none;
       flex-direction: column;
       gap: 8px;
-      min-width: 220px;
+      min-width: 210px;
     }
 
     .voice-calib-popover.open {
       display: flex;
-    }
-
-    .calib-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
     .vu-meter-track {
@@ -777,7 +612,6 @@
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #34c759 60%, #ffd60a 85%, #ff453a 100%);
-      transition: width 0.05s linear;
     }
 
     .vu-threshold-notch {
@@ -789,7 +623,202 @@
       transform: translateX(-50%);
     }
 
-    /* Transparent Countdown Overlay */
+    /* Session Timer */
+    .session-timer-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #f5f5f7;
+    }
+
+    .session-timer-rec {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff453a;
+      opacity: 0.4;
+    }
+
+    .session-timer-rec.recording {
+      opacity: 1;
+      animation: pulseRecord 1.2s infinite;
+    }
+
+    @keyframes pulseRecord {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Minimalist Apple Keep-Awake Tag */
+    .prompter-status-tag {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #34c759;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .prompter-status-tag.inactive {
+      color: #8e8e93;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 8px #34c759;
+    }
+
+    .prompter-status-tag.inactive .status-dot {
+      background: #8e8e93;
+      box-shadow: none;
+    }
+
+    /* Scrubber Progress Line */
+    .prompter-progress-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.12);
+      z-index: 55;
+      cursor: pointer;
+    }
+
+    .prompter-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #2997ff;
+      box-shadow: 0 0 10px rgba(41, 151, 255, 0.8);
+    }
+
+    /* Non-obscuring Transparent Countdown Overlay */
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 70;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .countdown-overlay.show {
+      opacity: 1;
+    }
+
+    .countdown-badge {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(18, 18, 22, 0.75);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+    }
+
+    .countdown-number {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* Floating Studio HUD */
+    .studio-hud {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      transition: opacity 0.3s var(--ease-apple), transform 0.3s var(--ease-apple);
+    }
+
+    .studio-hud.hud-hidden {
+      opacity: 0;
+      transform: translate(-50%, 14px);
+      pointer-events: none;
+    }
+
+    .hud-island {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+    }
+
+    .hud-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #f5f5f7;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .hud-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .hud-btn.active {
+      color: #2997ff;
+      border-color: rgba(41, 151, 255, 0.4);
+      background: rgba(41, 151, 255, 0.12);
+    }
+
+    .hud-btn-play {
+      width: 48px;
+      height: 48px;
+      background: #ffffff;
+      color: #000000;
+      border-radius: 50%;
+      box-shadow: 0 4px 18px rgba(255, 255, 255, 0.3);
+    }
+
+    .hud-speed-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
     .hud-slider {
       -webkit-appearance: none;
       width: 85px;
@@ -830,7 +859,7 @@
     }
 
     .hud-label {
-      color: var(--text-muted);
+      color: #86868b;
       font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -864,7 +893,7 @@
       transform: scale(1.15);
     }
 
-    /* Modal Reference Dialog */
+    /* Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -894,19 +923,11 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.7);
     }
 
-    .modal-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
     .hotkey-table {
       width: 100%;
       font-size: 0.85rem;
       border-collapse: collapse;
+      margin-top: 14px;
     }
 
     .hotkey-table td {
@@ -923,42 +944,7 @@
       font-weight: 600;
     }
 
-    /* Formatted Markdown Script Display */
-    .prompter-text h1, .prompter-text h2, .prompter-text h3 {
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-top: 0.8em;
-      margin-bottom: 0.3em;
-      color: #2997ff;
-    }
-    .prompter-text h1 { font-size: 1.35em; }
-    .prompter-text h2 { font-size: 1.2em; }
-    .prompter-text h3 { font-size: 1.08em; }
-    .prompter-text p {
-      margin-top: 0;
-      margin-bottom: 0.75em;
-    }
-    .prompter-text p:last-child {
-      margin-bottom: 0;
-    }
-    .prompter-text p:empty,
-    .prompter-text br + br + br {
-      display: none;
-    }
-    .prompter-text hr {
-      border: none;
-      border-top: 2px dashed rgba(255,255,255,0.2);
-      margin: 1.2em 0;
-    }
-    .prompter-text ul, .prompter-text ol {
-      padding-left: 1.2em;
-      margin: 0.6em 0;
-    }
-    .prompter-text li {
-      margin-bottom: 0.3em;
-    }
-
-    /* Modal / Alert Notification Toast */
+    /* Notification Toast */
     .toast-container {
       position: fixed;
       top: 20px;
@@ -988,9 +974,7 @@
     }
 
     @media (max-width: 768px) {
-      .editor-stage {
-        padding: 14px;
-      }
+      .editor-stage { padding: 14px; }
       .sidebar {
         position: absolute;
         left: 0;
@@ -1003,33 +987,21 @@
         transform: translateX(0);
         box-shadow: 20px 0 50px rgba(0,0,0,0.8);
       }
-      .prompter-content-wrapper {
-        padding: 38vh 20px 50vh;
-      }
-      .prompter-text {
-        font-size: 32px;
-      }
-      .hud-slider {
-        width: 60px;
-      }
-      .hud-settings-drawer {
-        flex-wrap: wrap;
-        justify-content: center;
-        max-width: 90vw;
-      }
+      .prompter-content-wrapper { padding: 38vh 20px 50vh; }
+      .prompter-text { font-size: 32px; }
+      .hud-slider { width: 60px; }
+      .hud-settings-drawer { flex-wrap: wrap; justify-content: center; max-width: 90vw; }
     }
   </style>
 </head>
 <body class="theme-midnight">
 
   <div class="toast-container">
-    <div id="toast" class="toast">Script loaded</div>
+    <div id="toast" class="toast">Prompt Loaded</div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- VIEW 1: STUDIO SCRIPT EDITOR               -->
-  <!-- ========================================== -->
-  <div id="editorView" class="view active">
+  <!-- VIEW 1: STUDIO SCRIPT EDITOR -->
+  <div id="editorView" class="view-screen" style="display: flex;">
     <header class="nav-header">
       <div class="brand-logo">
         <i data-lucide="tv" style="width: 20px; height: 20px; color: #2997ff;"></i>
@@ -1046,7 +1018,7 @@
           <i data-lucide="file-up" style="width: 16px; height: 16px;"></i>
           <span>Import</span>
         </button>
-        <input type="file" id="fileInput" accept=".txt,.md,.pdf,.docx">
+        <input type="file" id="fileInput" accept=".txt,.md,.pdf,.docx" style="display: none;">
 
         <button id="btnShortcutsModal" class="btn btn-icon-only" title="Keyboard Shortcuts (?)">
           <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
@@ -1060,18 +1032,18 @@
     </header>
 
     <div class="workspace">
-      <!-- Script Drawer / Library -->
+      <!-- Script Library Drawer -->
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <span class="sidebar-title">Your Scripts</span>
-          <div class="sidebar-tools">
+          <div style="display: flex; gap: 6px;">
             <button id="btnBackupExport" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="Backup All (JSON)">
               <i data-lucide="download" style="width: 14px; height: 14px;"></i>
             </button>
             <button id="btnBackupImport" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="Restore Backup">
               <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
             </button>
-            <input type="file" id="backupFileInput" accept=".json">
+            <input type="file" id="backupFileInput" accept=".json" style="display: none;">
             <button id="btnNewScript" class="btn btn-icon-only" style="width: 28px; height: 28px;" title="New Script">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
             </button>
@@ -1080,14 +1052,14 @@
         <div id="scriptList" class="script-list"></div>
       </aside>
 
-      <!-- Apple-Grade Script Writing Canvas -->
+      <!-- Main Editor Canvas -->
       <main class="editor-stage">
         <div class="editor-card">
           <div class="editor-card-header">
             <input type="text" id="scriptTitleInput" class="title-input" placeholder="Untitled Presentation...">
             
             <div class="editor-stats-bar">
-              <span id="saveStatus" class="save-status-indicator">
+              <span id="saveStatus" style="color: #34c759; display: flex; align-items: center; gap: 4px;">
                 <i data-lucide="check" style="width: 12px; height: 12px;"></i> Saved
               </span>
               <span>•</span>
@@ -1109,13 +1081,11 @@
               <span>Paste script here or drag & drop .txt, .md, .docx, .pdf</span>
             </div>
             
-            <textarea id="scriptContentInput" class="script-textarea" placeholder="Start typing your speech, paste notes, or drop files here...
-# Markdown is supported
-Headings, bullets, and emphasis are automatically sanitized and converted into readable prompter cues."></textarea>
+            <textarea id="scriptContentInput" class="script-textarea" placeholder="Welcome to PROMPTER Studio"></textarea>
             
             <div class="drop-overlay" id="dropOverlay">
               <i data-lucide="arrow-down-circle" style="width: 48px; height: 48px; color: #2997ff;"></i>
-              <p style="font-weight: 600; color: #2997ff;">Drop document to import cleanly</p>
+              <p style="font-weight: 600; color: #2997ff;">Drop document to import</p>
             </div>
           </div>
         </div>
@@ -1123,63 +1093,59 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- VIEW 2: LIVE TELEPROMPTER                  -->
-  <!-- ========================================== -->
-  <div id="prompterView" class="view">
+  <!-- VIEW 2: LIVE TELEPROMPTER VIEW -->
+  <div id="prompterView" class="view-screen">
     <div id="progressTrack" class="prompter-progress-track" title="Click to Scrub">
       <div id="progressFill" class="prompter-progress-fill"></div>
     </div>
 
-    <!-- Top Telemetry & Controls Bar -->
+    <!-- Header Telemetry -->
     <header class="prompter-top-bar">
-      <!-- Voice Cruise Control with Live Acoustic Calibration -->
+      <!-- Voice Cruise Control with VU Meter -->
       <div class="voice-control-wrapper">
-        <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise Control">
+        <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise">
           <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
           <span id="voiceCruiseLabel">VOICE CRUISE: OFF</span>
-          <div class="voice-wave" id="voiceWaveContainer">
+          <div class="voice-wave">
             <span class="voice-wave-bar" id="vBar1"></span>
             <span class="voice-wave-bar" id="vBar2"></span>
             <span class="voice-wave-bar" id="vBar3"></span>
             <span class="voice-wave-bar" id="vBar4"></span>
           </div>
           <span id="voiceLiveWpm" class="voice-wpm-badge">SPEAK ALOUD</span>
-          <button id="btnVoiceCalib" class="btn btn-icon-only" style="width: 22px; height: 22px; border: none; background: transparent; padding: 0;" title="Acoustic Sensitivity Calibration">
-            <i data-lucide="sliders-horizontal" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
+          <button id="btnVoiceCalib" class="btn btn-icon-only" style="width: 22px; height: 22px; border: none; background: transparent; padding: 0;">
+            <i data-lucide="sliders-horizontal" style="width: 12px; height: 12px; color: #86868b;"></i>
           </button>
         </div>
 
-        <!-- Popover VU-meter & Mic Sensitivity Slider -->
         <div id="voiceCalibPopover" class="voice-calib-popover">
-          <div class="calib-header">
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #86868b;">
             <span>Mic Sensitivity</span>
             <span id="micSensValueLabel" style="color: #64b5ff;">0.035</span>
           </div>
           <input type="range" id="micSensSlider" class="hud-slider" style="width: 100%;" min="0.010" max="0.080" step="0.005" value="0.035">
-          <div class="vu-meter-track" title="Live Audio Energy vs Trigger Threshold (Blue Notch)">
+          <div class="vu-meter-track">
             <div id="vuMeterBar" class="vu-meter-bar"></div>
             <div id="vuThresholdNotch" class="vu-threshold-notch" style="left: 43%;"></div>
           </div>
         </div>
       </div>
 
-      <!-- Live Session Recording & Remaining Reading Timer -->
-      <div class="session-timer-pill" id="sessionTimerPill" title="Session Elapsed / Est. Remaining">
+      <!-- Live Elapsed / Remaining Timer -->
+      <div class="session-timer-pill">
         <span class="session-timer-rec" id="sessionRecDot"></span>
         <span id="sessionTimerDisplay">00:00</span>
         <span style="opacity: 0.35;">/</span>
-        <span id="sessionRemainingDisplay" style="color: var(--text-muted);">00:00 REM</span>
+        <span id="sessionRemainingDisplay" style="color: #86868b;">00:00 REM</span>
       </div>
 
-      <!-- Apple Minimalist Keep-Awake Pill -->
-      <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display sleep prevention">
-        <div class="status-dot" id="statusDot"></div>
+      <!-- Screen Awake Status Pill -->
+      <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display keep awake">
+        <div class="status-dot"></div>
         <span id="wakeLockStatusText">AWAKE: ON</span>
       </div>
     </header>
 
-    <!-- Reading Vignette Focus Overlay (Dims text outside active reading lane) -->
     <div id="vignetteOverlay" class="prompter-vignette-overlay"></div>
 
     <div id="eyelineGuide" class="eyeline-guide">
@@ -1193,16 +1159,15 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       </div>
     </div>
 
-    <!-- Non-obscuring Floating 3-2-1 Countdown Badge -->
+    <!-- Countdown Badge Overlay -->
     <div id="countdownOverlay" class="countdown-overlay">
       <div class="countdown-badge">
         <span id="countdownNumber" class="countdown-number">3</span>
       </div>
     </div>
 
-    <!-- Floating Studio HUD -->
+    <!-- Floating Dock HUD -->
     <div id="studioHud" class="studio-hud">
-      <!-- Secondary Drawer -->
       <div id="settingsDrawer" class="glass-pill hud-settings-drawer hidden">
         <div class="hud-setting-group">
           <span class="hud-label">Size</span>
@@ -1214,7 +1179,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           <input type="range" id="widthSlider" class="hud-slider" min="400" max="1400" value="820" step="20">
         </div>
 
-        <!-- Eyeline Anchor Height Slider -->
         <div class="hud-setting-group">
           <span class="hud-label">Eyeline</span>
           <input type="range" id="eyelineSlider" class="hud-slider" min="25" max="60" value="42" step="1">
@@ -1232,7 +1196,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           <button id="btnToggleGuide" class="hud-btn active" title="Toggle Eyeline Guide">
             <i data-lucide="crosshair" style="width: 17px; height: 17px;"></i>
           </button>
-          <button id="btnToggleVignette" class="hud-btn" title="Toggle Shaded Focus Vignette">
+          <button id="btnToggleVignette" class="hud-btn" title="Toggle Focus Vignette">
             <i data-lucide="sun-dim" style="width: 17px; height: 17px;"></i>
           </button>
         </div>
@@ -1244,7 +1208,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         </div>
       </div>
 
-      <!-- Main Controls Island -->
       <div class="glass-pill hud-island">
         <button id="btnExitPrompter" class="hud-btn" title="Exit Prompter (Esc)">
           <i data-lucide="x" style="width: 19px; height: 19px;"></i>
@@ -1266,16 +1229,16 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           <i data-lucide="play" style="width: 22px; height: 22px;"></i>
         </button>
 
-        <!-- Script Position Scrubber Slider -->
+        <!-- Bidirectional Script Position Scrubber -->
         <div class="hud-speed-pill" title="Scrub script position">
-          <i data-lucide="film" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
+          <i data-lucide="film" style="width: 15px; height: 15px; color: #86868b;"></i>
           <input type="range" id="scrubberSlider" class="hud-slider" min="0" max="100" value="0" step="0.1" style="width: 105px;">
-          <span id="scrubberPercentLabel" style="min-width: 38px; font-size: 0.75rem; color: var(--text-muted);">0%</span>
+          <span id="scrubberPercentLabel" style="min-width: 38px; font-size: 0.75rem; color: #86868b;">0%</span>
         </div>
 
-        <!-- WPM Speed Control -->
+        <!-- WPM Speed Slider -->
         <div class="hud-speed-pill">
-          <i data-lucide="gauge" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
+          <i data-lucide="gauge" style="width: 15px; height: 15px; color: #86868b;"></i>
           <input type="range" id="speedSlider" class="hud-slider" min="60" max="320" value="150" step="5">
           <span id="speedValueLabel" style="min-width: 54px;">150 WPM</span>
         </div>
@@ -1295,12 +1258,12 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     </div>
   </div>
 
-  <!-- Keyboard Shortcuts Modal -->
+  <!-- Keyboard Shortcuts Sheet -->
   <div id="shortcutsModal" class="modal-backdrop">
     <div class="modal-sheet">
-      <div class="modal-title">
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 600;">
         <span>Keyboard Shortcuts</span>
-        <button id="btnCloseModal" class="btn btn-icon-only" style="width: 30px; height: 30px; border: none;">
+        <button id="btnCloseModal" class="btn btn-icon-only" style="border: none;">
           <i data-lucide="x" style="width: 16px; height: 16px;"></i>
         </button>
       </div>
@@ -1316,104 +1279,14 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- APPLICATION ENGINE                         -->
-  <!-- ========================================== -->
+  <!-- APPLICATION JAVASCRIPT -->
   <script>
-    // -------------------------------------------------------------
-    // 1. IndexedDB Storage Engine (with auto-fallback)
-    // -------------------------------------------------------------
-    const DB_NAME = 'PrompterStudioDB';
-    const DB_VERSION = 1;
-    const STORE_SCRIPTS = 'scripts';
-    let db = null;
-
-    const defaultScript = {
-      id: 'welcome-script',
-      title: 'Welcome to PROMPTER Studio',
-      content: 'Welcome to PROMPTER Studio',
-      lastPosition: 0,
-      updatedAt: Date.now()
-    };
-
-    function initDatabase() {
-      return new Promise((resolve) => {
-        if (!('indexedDB' in window)) {
-          console.warn('IndexedDB unavailable, falling back to LocalStorage');
-          resolve(false);
-          return;
-        }
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const dbInstance = e.target.result;
-          if (!dbInstance.objectStoreNames.contains(STORE_SCRIPTS)) {
-            dbInstance.createObjectStore(STORE_SCRIPTS, { keyPath: 'id' });
-          }
-        };
-        request.onsuccess = (e) => {
-          db = e.target.result;
-          resolve(true);
-        };
-        request.onerror = () => resolve(false);
-      });
-    }
-
-    async function dbGetAllScripts() {
-      if (!db) {
-        const local = localStorage.getItem('prompter_scripts_fallback');
-        return local ? JSON.parse(local) : [defaultScript];
-      }
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_SCRIPTS, 'readonly');
-        const store = tx.objectStore(STORE_SCRIPTS);
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result.length ? req.result : [defaultScript]);
-        req.onerror = () => resolve([defaultScript]);
-      });
-    }
-
-    async function dbSaveScript(script) {
-      if (!db) {
-        const scripts = await dbGetAllScripts();
-        const idx = scripts.findIndex(s => s.id === script.id);
-        if (idx >= 0) scripts[idx] = script; else scripts.unshift(script);
-        localStorage.setItem('prompter_scripts_fallback', JSON.stringify(scripts));
-        return;
-      }
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_SCRIPTS, 'readwrite');
-        const store = tx.objectStore(STORE_SCRIPTS);
-        store.put(script);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-      });
-    }
-
-    async function dbDeleteScript(id) {
-      if (!db) {
-        let scripts = await dbGetAllScripts();
-        scripts = scripts.filter(s => s.id !== id);
-        localStorage.setItem('prompter_scripts_fallback', JSON.stringify(scripts));
-        return;
-      }
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_SCRIPTS, 'readwrite');
-        const store = tx.objectStore(STORE_SCRIPTS);
-        store.delete(id);
-        tx.oncomplete = () => resolve();
-      });
-    }
-
-    // -------------------------------------------------------------
-    // 2. Global State & Settings
-    // -------------------------------------------------------------
-    const SETTINGS_KEY = 'prompter_studio_settings_v2';
-
-    let state = {
+    // State Store
+    const state = {
       scripts: [],
-      currentScriptId: null,
+      currentScriptId: 'welcome-script',
       isPlaying: false,
-      wpm: 150, // Words per minute
+      wpm: 150,
       fontSize: 48,
       readingWidth: 820,
       eyelinePercent: 42,
@@ -1432,20 +1305,16 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       micSensitivity: 0.035
     };
 
-    // Audio & Mic Analysis State
-    let audioContext = null;
-    let micMediaStream = null;
-    let micAnalyserNode = null;
-    let micDataArray = null;
-    let isUserSpeaking = false;
-    let voiceScrollVelocity = 0;
+    // Default Starting Script
+    const defaultScript = {
+      id: 'welcome-script',
+      title: 'Welcome to PROMPTER Studio',
+      content: 'Welcome to PROMPTER Studio',
+      lastPosition: 0,
+      updatedAt: Date.now()
+    };
 
-    // Session Timer State
-    let sessionStartTime = null;
-    let sessionElapsedSeconds = 0;
-    let sessionTimerInterval = null;
-
-    // Element References
+    // DOM Elements
     const editorView = document.getElementById('editorView');
     const prompterView = document.getElementById('prompterView');
     const scriptTitleInput = document.getElementById('scriptTitleInput');
@@ -1453,11 +1322,12 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     const wordCountLabel = document.getElementById('wordCountLabel');
     const readingTimeLabel = document.getElementById('readingTimeLabel');
     const saveStatus = document.getElementById('saveStatus');
+    const sidebar = document.getElementById('sidebar');
+    const scriptList = document.getElementById('scriptList');
     const fileInput = document.getElementById('fileInput');
     const backupFileInput = document.getElementById('backupFileInput');
-    const dropOverlay = document.getElementById('dropOverlay');
     const editorDropZone = document.getElementById('editorDropZone');
-    const sidebar = document.getElementById('sidebar');
+    const dropOverlay = document.getElementById('dropOverlay');
 
     const prompterViewport = document.getElementById('prompterViewport');
     const prompterWrapper = document.getElementById('prompterWrapper');
@@ -1494,13 +1364,30 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     const shortcutsModal = document.getElementById('shortcutsModal');
     const toast = document.getElementById('toast');
 
-    // -------------------------------------------------------------
-    // 3. Security Sanitizer & Clean Markdown Engine
-    // -------------------------------------------------------------
+    // Audio & Session State
+    let audioContext = null;
+    let micMediaStream = null;
+    let micAnalyserNode = null;
+    let micDataArray = null;
+    let isUserSpeaking = false;
+    let voiceScrollVelocity = 0;
+    let micMonitorInterval = null;
+    let silenceTimer = null;
+    let speechRecognizer = null;
+    let spokenWordsTimeline = [];
+    let targetVoiceWpm = 150;
+
+    let sessionStartTime = null;
+    let sessionElapsedSeconds = 0;
+    let sessionTimerInterval = null;
+    let animationFrameId = null;
+    let lastTimestamp = 0;
+    let hudHideTimeout = null;
+    let saveDebounceTimer = null;
+
+    // 1. Text Normalization & Sanitization
     function normalizeLineGaps(text) {
       if (!text) return '';
-      // Normalize CRLF to LF, strip trailing whitespace per line,
-      // and cap 3 or more consecutive newlines down to exactly 2 newlines (allowing 1 or 2 Enters max)
       return text
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
@@ -1511,21 +1398,19 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
     function cleanMarkdownToSanitizedHTML(rawText) {
       if (!rawText) return '';
-      // Compress excessive enters and spacing prior to parsing
       const normalized = normalizeLineGaps(rawText);
       let parsed = '';
 
       if (typeof marked !== 'undefined') {
         try {
           parsed = marked.parse(normalized, { breaks: true, gfm: true });
-        } catch (e) {
+        } catch (_) {
           parsed = escapeHtml(normalized);
         }
       } else {
         parsed = escapeHtml(normalized);
       }
 
-      // DOMPurify Sanitization against XSS
       let sanitized = parsed;
       if (typeof DOMPurify !== 'undefined') {
         sanitized = DOMPurify.sanitize(parsed, {
@@ -1534,79 +1419,40 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         });
       }
 
-      // Remove redundant empty paragraph gaps or consecutive breaks generated by parsers
-      sanitized = sanitized
+      return sanitized
         .replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '')
         .replace(/(<br\s*\/?>\s*){3,}/gi, '<br><br>');
-
-      return sanitized;
     }
 
-    // -------------------------------------------------------------
-    // 4. Enhanced PDF Extraction with Coordinate Grouping
-    // -------------------------------------------------------------
-    async function extractTextFromPDF(arrayBuffer) {
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
 
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        
-        if (!textContent.items || textContent.items.length === 0) continue;
-
-        // Sort items by vertical position (Y descending) then horizontal (X ascending)
-        const items = textContent.items.slice().sort((a, b) => {
-          const yDiff = b.transform[5] - a.transform[5];
-          if (Math.abs(yDiff) > 4) return yDiff;
-          return a.transform[4] - b.transform[4];
-        });
-
-        let pageLines = [];
-        let currentLine = '';
-        let lastY = null;
-
-        for (const item of items) {
-          const currentY = item.transform[5];
-          if (lastY === null) {
-            currentLine = item.str;
-          } else if (Math.abs(currentY - lastY) > 8) {
-            pageLines.push(currentLine.trim());
-            currentLine = item.str;
-          } else {
-            currentLine += (currentLine.endsWith(' ') || item.str.startsWith(' ') ? '' : ' ') + item.str;
-          }
-          lastY = currentY;
+    // 2. Storage Helpers (LocalStorage with memory fallback)
+    function loadScriptsFromStorage() {
+      try {
+        const stored = localStorage.getItem('prompter_scripts');
+        if (stored) {
+          state.scripts = JSON.parse(stored);
         }
-        if (currentLine.trim()) pageLines.push(currentLine.trim());
+      } catch (_) {}
 
-        fullText += pageLines.join('\n\n') + '\n\n';
+      if (!state.scripts || !state.scripts.length) {
+        state.scripts = [defaultScript];
       }
-
-      const extracted = normalizeLineGaps(fullText);
-      return extracted || 'Could not extract text. Document might be scanned images.';
+      state.currentScriptId = state.scripts[0].id;
     }
 
-    // -------------------------------------------------------------
-    // 5. App Initialization & Script Management
-    // -------------------------------------------------------------
-    async function initApp() {
-      lucide.createIcons();
-      await initDatabase();
-      loadSettings();
-      await refreshScriptLibrary();
-      setupEventListeners();
-      setupTouchGestures();
-      updateStats();
+    function persistScriptsToStorage() {
+      try {
+        localStorage.setItem('prompter_scripts', JSON.stringify(state.scripts));
+      } catch (_) {}
     }
 
-    async function refreshScriptLibrary() {
-      state.scripts = await dbGetAllScripts();
-      if (!state.currentScriptId || !state.scripts.find(s => s.id === state.currentScriptId)) {
-        state.currentScriptId = state.scripts[0].id;
-      }
-      renderScriptList();
-      loadCurrentScriptIntoEditor();
+    function getCurrentScript() {
+      return state.scripts.find(s => s.id === state.currentScriptId) || state.scripts[0];
     }
 
     function renderScriptList() {
@@ -1614,24 +1460,19 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       state.scripts.forEach(script => {
         const item = document.createElement('div');
         item.className = `script-item ${script.id === state.currentScriptId ? 'active' : ''}`;
-        
         const words = script.content.trim() ? script.content.trim().split(/\s+/).length : 0;
         const mins = Math.ceil(words / state.wpm);
 
         item.innerHTML = `
           <div class="script-item-title">${escapeHtml(script.title || 'Untitled')}</div>
-          <div class="script-item-meta">
-            <span>${words} words</span>
-            <span>•</span>
-            <span>${mins} min read</span>
-          </div>
+          <div class="script-item-meta">${words} words • ${mins} min read</div>
         `;
 
-        item.addEventListener('click', async () => {
-          await saveCurrentScriptFromEditor(true);
+        item.addEventListener('click', () => {
+          saveCurrentScriptFromEditor();
           state.currentScriptId = script.id;
           renderScriptList();
-          loadCurrentScriptIntoEditor();
+          loadScriptIntoEditor();
           if (window.innerWidth <= 768) {
             sidebar.classList.remove('open');
           }
@@ -1641,11 +1482,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       });
     }
 
-    function getCurrentScript() {
-      return state.scripts.find(s => s.id === state.currentScriptId) || state.scripts[0];
-    }
-
-    function loadCurrentScriptIntoEditor() {
+    function loadScriptIntoEditor() {
       const current = getCurrentScript();
       if (!current) return;
       scriptTitleInput.value = current.title;
@@ -1653,191 +1490,75 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       updateStats();
     }
 
-    let saveDebounceTimer = null;
-    function triggerDebouncedSave() {
-      setSaveStatus('Saving...', true);
-      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-      saveDebounceTimer = setTimeout(async () => {
-        await saveCurrentScriptFromEditor();
-        setSaveStatus('Saved', false);
-      }, 400);
-    }
-
-    function setSaveStatus(text, isSaving) {
-      saveStatus.className = `save-status-indicator ${isSaving ? 'saving' : ''}`;
-      saveStatus.innerHTML = `<i data-lucide="${isSaving ? 'loader-2' : 'check'}" style="width: 12px; height: 12px;"></i> ${text}`;
-      lucide.createIcons();
-    }
-
-    async function saveCurrentScriptFromEditor() {
+    function saveCurrentScriptFromEditor() {
       const current = getCurrentScript();
       if (!current) return;
       current.title = scriptTitleInput.value.trim() || 'Untitled Presentation';
       current.content = scriptContentInput.value;
       current.updatedAt = Date.now();
-      await dbSaveScript(current);
+      persistScriptsToStorage();
     }
 
-    async function createNewScript(title = 'Untitled Presentation', content = '') {
-      await saveCurrentScriptFromEditor();
-      const newScript = {
-        id: 'script_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()),
-        title,
-        content,
-        lastPosition: 0,
-        updatedAt: Date.now()
-      };
-      state.scripts.unshift(newScript);
-      state.currentScriptId = newScript.id;
-      await dbSaveScript(newScript);
-      renderScriptList();
-      loadCurrentScriptIntoEditor();
-      showToast('Created new script');
-    }
-
-    async function deleteCurrentScript() {
-      if (state.scripts.length <= 1) {
-        showToast('You must keep at least one script');
-        return;
-      }
-      const targetId = state.currentScriptId;
-      await dbDeleteScript(targetId);
-      state.scripts = state.scripts.filter(s => s.id !== targetId);
-      state.currentScriptId = state.scripts[0].id;
-      renderScriptList();
-      loadCurrentScriptIntoEditor();
-      showToast('Script deleted');
+    function triggerDebouncedSave() {
+      saveStatus.innerHTML = `<i data-lucide="loader-2" style="width: 12px; height: 12px;"></i> Saving...`;
+      lucide.createIcons();
+      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(() => {
+        saveCurrentScriptFromEditor();
+        saveStatus.innerHTML = `<i data-lucide="check" style="width: 12px; height: 12px;"></i> Saved`;
+        lucide.createIcons();
+      }, 400);
     }
 
     function updateStats() {
       const text = scriptContentInput.value.trim();
       const words = text ? text.split(/\s+/).length : 0;
       wordCountLabel.textContent = `${words} words`;
-      
       const totalSeconds = Math.round((words / state.wpm) * 60);
       const m = Math.floor(totalSeconds / 60);
       const s = totalSeconds % 60;
       readingTimeLabel.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // -------------------------------------------------------------
-    // 6. Backup, Export & File Import
-    // -------------------------------------------------------------
-    function exportAllScriptsBackup() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.scripts, null, 2));
-      const a = document.createElement('a');
-      a.href = dataStr;
-      a.download = `Prompter_Backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      showToast('Backup exported');
-    }
-
-    function exportSingleScriptMarkdown() {
-      const current = getCurrentScript();
-      const blob = new Blob([current.content], { type: 'text/markdown;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${current.title.replace(/\s+/g, '_')}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Exported Markdown');
-    }
-
-    async function handleBackupRestore(file) {
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed) && parsed.length) {
-          for (const s of parsed) {
-            await dbSaveScript(s);
-          }
-          await refreshScriptLibrary();
-          showToast('Backup restored successfully');
-        } else {
-          showToast('Invalid backup file');
-        }
-      } catch (e) {
-        showToast('Restore failed: ' + e.message);
-      }
-    }
-
-    async function handleFileImport(file) {
-      if (!file) return;
-      showToast(`Importing ${file.name}...`);
-      const extension = file.name.split('.').pop().toLowerCase();
-      const title = file.name.replace(/\.[^/.]+$/, "");
-
-      try {
-        if (extension === 'txt' || extension === 'text' || extension === 'md' || extension === 'markdown') {
-          const text = await file.text();
-          await createNewScript(title, normalizeLineGaps(text));
-        } else if (extension === 'pdf') {
-          const buffer = await file.arrayBuffer();
-          const text = await extractTextFromPDF(buffer);
-          await createNewScript(title, normalizeLineGaps(text));
-        } else if (extension === 'docx') {
-          const buffer = await file.arrayBuffer();
-          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-          await createNewScript(title, normalizeLineGaps(result.value));
-        } else {
-          showToast('Format not supported (.txt, .md, .docx, .pdf)');
-        }
-      } catch (err) {
-        console.error(err);
-        showToast('Import error: ' + err.message);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 7. Teleprompter Engine, WPM Calibration & Smooth Scroll
-    // -------------------------------------------------------------
-    let animationFrameId = null;
-    let lastTimestamp = 0;
-    let hudHideTimeout = null;
-
+    // 3. ROCK-SOLID VIEW SWITCHER
     function startPrompter() {
       try {
         saveCurrentScriptFromEditor();
         const current = getCurrentScript();
-        if (!current || !current.content.trim()) {
-          showToast('Please enter script text first');
-          return;
-        }
+        const textToDisplay = current && current.content.trim() ? current.content : 'Welcome to PROMPTER Studio';
 
-        // 1. Render sanitized HTML into teleprompter view
-        prompterText.innerHTML = cleanMarkdownToSanitizedHTML(current.content);
+        // Render sanitized text
+        prompterText.innerHTML = cleanMarkdownToSanitizedHTML(textToDisplay);
 
-        // 2. Perform smooth, uninterrupted view switch
-        editorView.classList.remove('active');
-        prompterView.classList.add('active');
+        // DIRECT DISPLAY SWITCH (Guaranteed execution)
+        editorView.style.display = 'none';
+        prompterView.style.display = 'flex';
 
-        // 3. Set starting scroll anchor position
+        // Position text parked at eyeline (Paused by default!)
         if (state.reverseScroll) {
-          prompterViewport.scrollTop = current.lastPosition > 0 
+          prompterViewport.scrollTop = current && current.lastPosition > 0 
             ? current.lastPosition 
             : prompterViewport.scrollHeight - prompterViewport.clientHeight;
         } else {
-          prompterViewport.scrollTop = current.lastPosition || 0;
+          prompterViewport.scrollTop = current ? (current.lastPosition || 0) : 0;
         }
 
-        // 4. Initialize telemetry and interface state
+        updatePlayButtonUI(false);
+        state.isPlaying = false;
+        state.hasStartedFirstTake = false;
         resetHudTimeout();
         updateProgress();
         updateSessionTiming();
-        updatePlayButtonUI(false);
-        state.hasStartedFirstTake = false;
 
-        // 5. Silent, non-blocking background Wake Lock request (never throws or halts transition)
+        // Silent background wake lock request
         if (state.wakeLockWanted) {
           requestWakeLock().catch(() => {});
         }
       } catch (err) {
-        console.error('Error starting prompter view:', err);
-        // Fail-safe view switch fallback
-        editorView.classList.remove('active');
-        prompterView.classList.add('active');
+        console.error('Teleprompter launch error:', err);
+        // Fallback display switch
+        editorView.style.display = 'none';
+        prompterView.style.display = 'flex';
       }
     }
 
@@ -1847,72 +1568,23 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       if (state.voiceCruiseActive) {
         stopVoiceCruise();
       }
+
       const current = getCurrentScript();
       if (current) {
         current.lastPosition = prompterViewport.scrollTop;
-        dbSaveScript(current);
+        persistScriptsToStorage();
       }
+
       releaseWakeLock();
-      prompterView.classList.remove('active');
-      editorView.classList.add('active');
+      prompterView.style.display = 'none';
+      editorView.style.display = 'flex';
+
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
     }
 
-    // -------------------------------------------------------------
-    // Live Session Elapsed & Remaining Timer Engine
-    // -------------------------------------------------------------
-    function startSessionTimer() {
-      if (sessionTimerInterval) return;
-      sessionStartTime = Date.now() - (sessionElapsedSeconds * 1000);
-      sessionRecDot.classList.add('recording');
-      sessionTimerInterval = setInterval(() => {
-        sessionElapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
-        updateSessionTiming();
-      }, 500);
-    }
-
-    function pauseSessionTimer() {
-      if (sessionTimerInterval) {
-        clearInterval(sessionTimerInterval);
-        sessionTimerInterval = null;
-      }
-      sessionRecDot.classList.remove('recording');
-    }
-
-    function stopSessionTimer() {
-      pauseSessionTimer();
-      sessionElapsedSeconds = 0;
-      updateSessionTiming();
-    }
-
-    function updateSessionTiming() {
-      // Format Elapsed
-      const em = Math.floor(sessionElapsedSeconds / 60);
-      const es = sessionElapsedSeconds % 60;
-      sessionTimerDisplay.textContent = `${em < 10 ? '0' : ''}${em}:${es < 10 ? '0' : ''}${es}`;
-
-      // Calculate Remaining based on remaining distance and current WPM
-      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
-      if (maxScroll <= 0) {
-        sessionRemainingDisplay.textContent = '00:00 REM';
-        return;
-      }
-      let fractionLeft = 1 - (prompterViewport.scrollTop / maxScroll);
-      if (state.reverseScroll) fractionLeft = prompterViewport.scrollTop / maxScroll;
-      fractionLeft = Math.max(0, Math.min(1, fractionLeft));
-
-      const current = getCurrentScript();
-      const totalWords = current && current.content.trim() ? current.content.trim().split(/\s+/).length : 0;
-      const effectiveWpm = state.currentDynamicWpm || state.wpm;
-      const remainingSeconds = Math.round((totalWords * fractionLeft / effectiveWpm) * 60);
-
-      const rm = Math.floor(remainingSeconds / 60);
-      const rs = remainingSeconds % 60;
-      sessionRemainingDisplay.textContent = `${rm < 10 ? '0' : ''}${rm}:${rs < 10 ? '0' : ''}${rs} REM`;
-    }
-
+    // 4. Countdown & Playback Engine
     function updatePlayButtonUI(isPlaying) {
       if (isPlaying) {
         btnPlayPause.innerHTML = `<i data-lucide="pause" style="width: 22px; height: 22px;"></i>`;
@@ -1937,7 +1609,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       countdownNumber.textContent = count;
 
       const timer = setInterval(() => {
-        if (!prompterView.classList.contains('active')) {
+        if (prompterView.style.display === 'none') {
           clearInterval(timer);
           countdownOverlay.classList.remove('show');
           state.isCountdownActive = false;
@@ -1953,6 +1625,23 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           if (callback) callback();
         }
       }, 900);
+    }
+
+    function togglePlayPause() {
+      if (state.isCountdownActive) return;
+
+      if (!state.isPlaying) {
+        if (!state.hasStartedFirstTake) {
+          state.hasStartedFirstTake = true;
+          runCountdown(() => {
+            playPrompter();
+          });
+        } else {
+          playPrompter();
+        }
+      } else {
+        pausePrompter();
+      }
     }
 
     function playPrompter() {
@@ -1976,27 +1665,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       const current = getCurrentScript();
       if (current) {
         current.lastPosition = prompterViewport.scrollTop;
-        dbSaveScript(current);
+        persistScriptsToStorage();
       }
       showHUD();
-    }
-
-    function togglePlayPause() {
-      if (state.isCountdownActive) return;
-
-      if (!state.isPlaying) {
-        // Run 3-2-1 countdown on initial start
-        if (!state.hasStartedFirstTake) {
-          state.hasStartedFirstTake = true;
-          runCountdown(() => {
-            playPrompter();
-          });
-        } else {
-          playPrompter();
-        }
-      } else {
-        pausePrompter();
-      }
     }
 
     function scrollStep(currentTimestamp) {
@@ -2007,28 +1678,24 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
       let effectiveWpm = state.wpm;
 
-      // In Voice Cruise mode, dynamically modulate velocity based on detected speech
+      // Dynamic Voice Modulation
       if (state.voiceCruiseActive) {
-        // Smoothly ramp up velocity when speaking, gently decay to 0 on silence
         const targetVelocityFactor = isUserSpeaking ? 1.0 : 0.0;
-        voiceScrollVelocity += (targetVelocityFactor - voiceScrollVelocity) * 0.14;
+        voiceScrollVelocity += (targetVelocityFactor - voiceScrollVelocity) * 0.15;
 
         if (targetVoiceWpm > 0 && isUserSpeaking) {
           state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.08;
           effectiveWpm = state.currentDynamicWpm;
         }
 
-        // If user stopped talking and velocity dropped near zero, avoid creeping
         if (voiceScrollVelocity < 0.02) {
           animationFrameId = requestAnimationFrame(scrollStep);
           return;
         }
-
         effectiveWpm *= voiceScrollVelocity;
       }
 
-      // Calibration: Convert WPM into precise vertical pixel speed based on typography
-      // Average line ~ 8.5 words. Pixel height per line ~ fontSize * 1.55.
+      // WPM to Pixel Movement Calibration
       const wordsPerSec = effectiveWpm / 60;
       const lineHeightPx = state.fontSize * 1.55;
       const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
@@ -2055,15 +1722,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       animationFrameId = requestAnimationFrame(scrollStep);
     }
 
-    // -------------------------------------------------------------
-    // 8. Dual Voice-Sensing Engine: Audio Energy (VAD) + Web Speech API
-    // -------------------------------------------------------------
-    let speechRecognizer = null;
-    let spokenWordsTimeline = [];
-    let targetVoiceWpm = 150;
-    let silenceTimer = null;
-    let micMonitorInterval = null;
-
+    // 5. Dual Audio Energy (RMS) & Voice Cruise Engine
     const vBars = [
       document.getElementById('vBar1'),
       document.getElementById('vBar2'),
@@ -2079,14 +1738,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         if (audioContext.state === 'suspended') {
           await audioContext.resume();
         }
-
         if (!micMediaStream) {
           micMediaStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true
-            }
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
           });
         }
 
@@ -2095,16 +1749,13 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         micAnalyserNode.fftSize = 1024;
         micAnalyserNode.smoothingTimeConstant = 0.4;
         source.connect(micAnalyserNode);
-
         micDataArray = new Uint8Array(micAnalyserNode.fftSize);
 
-        // Start high-frequency mic volume monitor
         if (micMonitorInterval) clearInterval(micMonitorInterval);
         micMonitorInterval = setInterval(sampleMicrophoneLevel, 35);
-
         return true;
       } catch (err) {
-        console.warn('Microphone permission or AudioContext error:', err);
+        console.warn('Microphone initialization failed:', err);
         return false;
       }
     }
@@ -2112,7 +1763,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     function sampleMicrophoneLevel() {
       if (!micAnalyserNode || !state.voiceCruiseActive) return;
 
-      // Measure true acoustic time-domain waveform
       micAnalyserNode.getByteTimeDomainData(micDataArray);
       let sum = 0;
       for (let i = 0; i < micDataArray.length; i++) {
@@ -2121,7 +1771,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       }
       const rms = Math.sqrt(sum / micDataArray.length);
 
-      // Animate waveform bars and VU meter
       const normalizedVol = Math.min(1, rms * 14);
       if (vBars[0]) {
         vBars[0].style.height = `${Math.max(4, normalizedVol * 16)}px`;
@@ -2129,19 +1778,18 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         vBars[2].style.height = `${Math.max(4, normalizedVol * 18)}px`;
         vBars[3].style.height = `${Math.max(4, normalizedVol * 13)}px`;
       }
-
       if (vuMeterBar) {
         vuMeterBar.style.width = `${Math.min(100, (rms / 0.08) * 100)}%`;
       }
 
-      // Voice Activity Threshold: user configurable sensitivity
+      // Voice Activity Threshold: True speaking detection
       const speechDetected = rms > state.micSensitivity;
       if (speechDetected) {
         isUserSpeaking = true;
         if (silenceTimer) clearTimeout(silenceTimer);
         voiceLiveWpm.textContent = `${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
 
-        // 350ms Silence Timeout: brakes smoothly when you pause
+        // 350ms silence trips pause
         silenceTimer = setTimeout(() => {
           isUserSpeaking = false;
           if (state.voiceCruiseActive) {
@@ -2151,65 +1799,12 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       }
     }
 
-    function initSpeechEngine() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return null;
-
-      try {
-        const recognizer = new SpeechRecognition();
-        recognizer.continuous = true;
-        recognizer.interimResults = true;
-        recognizer.lang = 'en-US';
-
-        recognizer.onresult = (event) => {
-          const now = performance.now();
-          let transcriptChunk = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcriptChunk += event.results[i][0].transcript + ' ';
-          }
-          const words = transcriptChunk.trim().split(/\s+/).filter(w => w.length > 0);
-          if (words.length > 0) {
-            for (let k = 0; k < words.length; k++) {
-              spokenWordsTimeline.push(now);
-            }
-            spokenWordsTimeline = spokenWordsTimeline.filter(t => now - t <= 4000);
-
-            if (spokenWordsTimeline.length >= 3) {
-              const durationSec = Math.max(1, (now - spokenWordsTimeline[0]) / 1000);
-              const calculatedWpm = Math.round((spokenWordsTimeline.length / durationSec) * 60);
-              targetVoiceWpm = Math.max(70, Math.min(260, calculatedWpm));
-              state.currentDynamicWpm = targetVoiceWpm;
-              if (isUserSpeaking) {
-                voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
-              }
-            }
-          }
-        };
-
-        recognizer.onerror = (e) => {
-          if (e.error === 'not-allowed') {
-            showToast('Microphone access denied in browser settings');
-          }
-        };
-
-        recognizer.onend = () => {
-          if (state.voiceCruiseActive) {
-            try { recognizer.start(); } catch (err) {}
-          }
-        };
-
-        return recognizer;
-      } catch (err) {
-        return null;
-      }
-    }
-
     async function toggleVoiceCruise() {
       if (!state.voiceCruiseActive) {
-        showToast('Requesting microphone...');
-        const hardwareMicOk = await initHardwareAudioAnalyser();
-        if (!hardwareMicOk) {
-          showToast('Could not access microphone. Check permissions.');
+        showToast('Accessing microphone...');
+        const ok = await initHardwareAudioAnalyser();
+        if (!ok) {
+          showToast('Mic permission required for Voice Cruise');
           return;
         }
 
@@ -2223,19 +1818,10 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         voiceScrollVelocity = 0;
         isUserSpeaking = false;
 
-        // Start optional SpeechRecognition for cadence refinement
-        if (!speechRecognizer) {
-          speechRecognizer = initSpeechEngine();
-        }
-        if (speechRecognizer) {
-          try { speechRecognizer.start(); } catch (e) {}
-        }
-
-        // Automatically start the animation loop if paused
         if (!state.isPlaying) {
           playPrompter();
         }
-        showToast('Voice mode active: Speak to scroll, stop to pause');
+        showToast('Voice Cruise: Speak to scroll, pause to stop');
       } else {
         stopVoiceCruise();
         showToast('Voice Cruise deactivated');
@@ -2251,22 +1837,63 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         clearInterval(micMonitorInterval);
         micMonitorInterval = null;
       }
-
-      if (speechRecognizer) {
-        try { speechRecognizer.stop(); } catch (e) {}
-      }
-
       voiceCruisePill.classList.remove('active');
       voiceCruiseLabel.textContent = 'VOICE CRUISE: OFF';
       voiceLiveWpm.textContent = 'SPEAK ALOUD';
       voiceCalibPopover.classList.remove('open');
       if (silenceTimer) clearTimeout(silenceTimer);
 
-      // Reset waveform bars to rest position
-      vBars.forEach(bar => {
-        if (bar) bar.style.height = '4px';
-      });
+      vBars.forEach(b => { if (b) b.style.height = '4px'; });
       if (vuMeterBar) vuMeterBar.style.width = '0%';
+    }
+
+    // 6. Timers & Progress
+    function startSessionTimer() {
+      if (sessionTimerInterval) return;
+      sessionStartTime = Date.now() - (sessionElapsedSeconds * 1000);
+      sessionRecDot.classList.add('recording');
+      sessionTimerInterval = setInterval(() => {
+        sessionElapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+        updateSessionTiming();
+      }, 500);
+    }
+
+    function pauseSessionTimer() {
+      if (sessionTimerInterval) {
+        clearInterval(sessionTimerInterval);
+        sessionTimerInterval = null;
+      }
+      sessionRecDot.classList.remove('recording');
+    }
+
+    function stopSessionTimer() {
+      pauseSessionTimer();
+      sessionElapsedSeconds = 0;
+      updateSessionTiming();
+    }
+
+    function updateSessionTiming() {
+      const em = Math.floor(sessionElapsedSeconds / 60);
+      const es = sessionElapsedSeconds % 60;
+      sessionTimerDisplay.textContent = `${em < 10 ? '0' : ''}${em}:${es < 10 ? '0' : ''}${es}`;
+
+      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
+      if (maxScroll <= 0) {
+        sessionRemainingDisplay.textContent = '00:00 REM';
+        return;
+      }
+      let fractionLeft = 1 - (prompterViewport.scrollTop / maxScroll);
+      if (state.reverseScroll) fractionLeft = prompterViewport.scrollTop / maxScroll;
+      fractionLeft = Math.max(0, Math.min(1, fractionLeft));
+
+      const current = getCurrentScript();
+      const totalWords = current && current.content.trim() ? current.content.trim().split(/\s+/).length : 0;
+      const effectiveWpm = state.currentDynamicWpm || state.wpm;
+      const remainingSeconds = Math.round((totalWords * fractionLeft / effectiveWpm) * 60);
+
+      const rm = Math.floor(remainingSeconds / 60);
+      const rs = remainingSeconds % 60;
+      sessionRemainingDisplay.textContent = `${rm < 10 ? '0' : ''}${rm}:${rs < 10 ? '0' : ''}${rs} REM`;
     }
 
     function updateProgress() {
@@ -2278,9 +1905,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         return;
       }
       let pct = (prompterViewport.scrollTop / maxScroll) * 100;
-      if (state.reverseScroll) {
-        pct = 100 - pct;
-      }
+      if (state.reverseScroll) pct = 100 - pct;
       const clampedPct = Math.min(100, Math.max(0, pct));
       progressFill.style.width = `${clampedPct}%`;
       if (scrubberSlider && document.activeElement !== scrubberSlider) {
@@ -2295,32 +1920,16 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     function scrubToPercent(pctVal) {
       const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
       let effectivePct = pctVal / 100;
-      if (state.reverseScroll) {
-        effectivePct = 1 - effectivePct;
-      }
+      if (state.reverseScroll) effectivePct = 1 - effectivePct;
       prompterViewport.scrollTop = maxScroll * effectivePct;
       updateProgress();
     }
 
-    function scrubToPosition(e) {
-      const rect = progressTrack.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      let pct = Math.max(0, Math.min(1, clickX / rect.width));
-      if (state.reverseScroll) {
-        pct = 1 - pct;
-      }
-      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
-      prompterViewport.scrollTop = maxScroll * pct;
-      updateProgress();
-    }
-
-    // -------------------------------------------------------------
-    // 8. Screen Wake Lock Management (Robust Lifecycle Sync)
-    // -------------------------------------------------------------
+    // 7. Wake Lock Management
     async function requestWakeLock() {
       if (!('wakeLock' in navigator)) {
         statusBadge.classList.add('inactive');
-        wakeLockStatusText.textContent = 'UNSUPPORTED';
+        wakeLockStatusText.textContent = 'AWAKE: OFF';
         return;
       }
       try {
@@ -2340,8 +1949,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
             wakeLockStatusText.textContent = 'AWAKE: OFF';
           }
         });
-      } catch (err) {
-        console.warn('Wake Lock request skipped or blocked:', err);
+      } catch (_) {
         statusBadge.classList.add('inactive');
         wakeLockStatusText.textContent = 'AWAKE: OFF';
       }
@@ -2349,9 +1957,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
     function releaseWakeLock() {
       if (state.wakeLock) {
-        try {
-          state.wakeLock.release().catch(() => {});
-        } catch (_) {}
+        try { state.wakeLock.release().catch(() => {}); } catch (_) {}
         state.wakeLock = null;
       }
       statusBadge.classList.add('inactive');
@@ -2371,39 +1977,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       }
     }
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && prompterView.classList.contains('active') && state.wakeLockWanted) {
-        requestWakeLock().catch(() => {});
-      }
-    });
-
-    // -------------------------------------------------------------
-    // 9. HUD Auto-Hide & Controls
-    // -------------------------------------------------------------
-    function showHUD() {
-      studioHud.classList.remove('hud-hidden');
-      document.querySelector('.prompter-top-bar').style.opacity = '1';
-      prompterView.classList.add('cursor-show');
-    }
-
-    function hideHUD() {
-      if (state.isPlaying) {
-        studioHud.classList.add('hud-hidden');
-        settingsDrawer.classList.add('hidden');
-        voiceCalibPopover.classList.remove('open');
-        document.querySelector('.prompter-top-bar').style.opacity = '0.12';
-        prompterView.classList.remove('cursor-show');
-      }
-    }
-
-    function resetHudTimeout() {
-      showHUD();
-      if (hudHideTimeout) clearTimeout(hudHideTimeout);
-      if (state.isPlaying) {
-        hudHideTimeout = setTimeout(hideHUD, 2600);
-      }
-    }
-
+    // 8. Mirroring, Settings, Themes & HUD
     function updateMirrorTransform() {
       prompterViewport.classList.remove('prompter-mirror-x', 'prompter-mirror-y', 'prompter-mirror-xy');
       if (state.mirrorX && state.mirrorY) {
@@ -2417,13 +1991,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       document.getElementById('btnMirrorY').classList.toggle('active', state.mirrorY);
     }
 
-    function setEyelineHeight(pct) {
-      state.eyelinePercent = Math.max(25, Math.min(60, pct));
-      eyelineGuide.style.top = `${state.eyelinePercent}%`;
-      eyelineSlider.value = state.eyelinePercent;
-      saveSettings();
-    }
-
     function applyTheme(themeName) {
       state.theme = themeName;
       document.body.classList.remove('theme-midnight', 'theme-paper', 'theme-sepia');
@@ -2431,7 +1998,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       document.querySelectorAll('.theme-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.theme === themeName);
       });
-      saveSettings();
     }
 
     function setWPM(value) {
@@ -2443,61 +2009,28 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       });
       updateStats();
       updateSessionTiming();
-      saveSettings();
     }
 
-    function setMicSensitivity(val) {
-      state.micSensitivity = parseFloat(val);
-      micSensSlider.value = state.micSensitivity;
-      micSensValueLabel.textContent = state.micSensitivity.toFixed(3);
-      if (vuThresholdNotch) {
-        vuThresholdNotch.style.left = `${Math.min(100, (state.micSensitivity / 0.08) * 100)}%`;
+    function showHUD() {
+      studioHud.classList.remove('hud-hidden');
+      document.querySelector('.prompter-top-bar').style.opacity = '1';
+    }
+
+    function hideHUD() {
+      if (state.isPlaying) {
+        studioHud.classList.add('hud-hidden');
+        settingsDrawer.classList.add('hidden');
+        voiceCalibPopover.classList.remove('open');
+        document.querySelector('.prompter-top-bar').style.opacity = '0.12';
       }
-      saveSettings();
     }
 
-    function loadSettings() {
-      try {
-        const saved = localStorage.getItem(SETTINGS_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          state.wpm = parsed.wpm || 150;
-          state.fontSize = parsed.fontSize || 48;
-          state.readingWidth = parsed.readingWidth || 820;
-          state.eyelinePercent = parsed.eyelinePercent || 42;
-          state.theme = parsed.theme || 'midnight';
-          state.showEyelineGuide = parsed.showEyelineGuide !== undefined ? parsed.showEyelineGuide : true;
-          state.focusVignette = parsed.focusVignette || false;
-          state.micSensitivity = parsed.micSensitivity || 0.035;
-        }
-      } catch (e) {}
-
-      applyTheme(state.theme);
-      setWPM(state.wpm);
-      setEyelineHeight(state.eyelinePercent);
-      setMicSensitivity(state.micSensitivity);
-      fontSizeSlider.value = state.fontSize;
-      widthSlider.value = state.readingWidth;
-      prompterText.style.fontSize = `${state.fontSize}px`;
-      prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
-      if (!state.showEyelineGuide) eyelineGuide.classList.add('hide');
-      vignetteOverlay.classList.toggle('active', state.focusVignette);
-      document.getElementById('btnToggleVignette').classList.toggle('active', state.focusVignette);
-    }
-
-    function saveSettings() {
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-          wpm: state.wpm,
-          fontSize: state.fontSize,
-          readingWidth: state.readingWidth,
-          eyelinePercent: state.eyelinePercent,
-          theme: state.theme,
-          showEyelineGuide: state.showEyelineGuide,
-          focusVignette: state.focusVignette,
-          micSensitivity: state.micSensitivity
-        }));
-      } catch (e) {}
+    function resetHudTimeout() {
+      showHUD();
+      if (hudHideTimeout) clearTimeout(hudHideTimeout);
+      if (state.isPlaying) {
+        hudHideTimeout = setTimeout(hideHUD, 2600);
+      }
     }
 
     function showToast(msg) {
@@ -2506,59 +2039,87 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // 9. Document Import Handlers (PDF, DOCX, MD, TXT)
+    async function handleFileImport(file) {
+      if (!file) return;
+      showToast(`Importing ${file.name}...`);
+      const ext = file.name.split('.').pop().toLowerCase();
+      const title = file.name.replace(/\.[^/.]+$/, "");
 
-    // -------------------------------------------------------------
-    // 10. Touch Gestures & Keyboard Bindings
-    // -------------------------------------------------------------
-    function setupTouchGestures() {
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let lastTapTime = 0;
-
-      prompterViewport.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-          touchStartX = e.touches[0].clientX;
-          touchStartY = e.touches[0].clientY;
-          resetHudTimeout();
-        }
-      }, { passive: true });
-
-      prompterViewport.addEventListener('touchend', (e) => {
-        const deltaX = e.changedTouches[0].clientX - touchStartX;
-        const deltaY = e.changedTouches[0].clientY - touchStartY;
-        const now = Date.now();
-
-        // Single / Double Tap detection
-        if (Math.abs(deltaX) < 12 && Math.abs(deltaY) < 12) {
-          if (now - lastTapTime < 320) {
-            togglePlayPause();
-          } else {
-            resetHudTimeout();
+      try {
+        if (['txt', 'text', 'md', 'markdown'].includes(ext)) {
+          const text = await file.text();
+          createNewScript(title, normalizeLineGaps(text));
+        } else if (ext === 'pdf' && window.pdfjsLib) {
+          const buffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(' ') + '\n\n';
           }
-          lastTapTime = now;
-          return;
+          createNewScript(title, normalizeLineGaps(fullText));
+        } else if (ext === 'docx' && window.mammoth) {
+          const buffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+          createNewScript(title, normalizeLineGaps(result.value));
+        } else {
+          showToast('Unsupported format (.txt, .md, .docx, .pdf)');
         }
-
-        // Swipe speed adjustment
-        if (Math.abs(deltaX) > 70 && Math.abs(deltaY) < 45) {
-          setWPM(state.wpm + (deltaX > 0 ? 10 : -10));
-          showToast(`${state.wpm} WPM`);
-        }
-      });
+      } catch (err) {
+        showToast('Import error: ' + err.message);
+      }
     }
 
-    function setupEventListeners() {
-      // Editor Actions
+    function createNewScript(title = 'Untitled Presentation', content = '') {
+      saveCurrentScriptFromEditor();
+      const newScript = {
+        id: 'script_' + Date.now(),
+        title,
+        content: content || 'Welcome to PROMPTER Studio',
+        lastPosition: 0,
+        updatedAt: Date.now()
+      };
+      state.scripts.unshift(newScript);
+      state.currentScriptId = newScript.id;
+      persistScriptsToStorage();
+      renderScriptList();
+      loadScriptIntoEditor();
+      showToast('Script Ready');
+    }
+
+    // 10. Event Setup
+    function setupEvents() {
+      // Primary View Nav
       document.getElementById('btnStartPrompter').addEventListener('click', startPrompter);
       document.getElementById('btnExitPrompter').addEventListener('click', exitPrompter);
+
+      // Editor Actions
       document.getElementById('btnNewScript').addEventListener('click', () => createNewScript());
-      document.getElementById('btnDeleteCurrent').addEventListener('click', deleteCurrentScript);
-      document.getElementById('btnExportSingle').addEventListener('click', exportSingleScriptMarkdown);
+      document.getElementById('btnDeleteCurrent').addEventListener('click', () => {
+        if (state.scripts.length <= 1) {
+          showToast('Keep at least one script');
+          return;
+        }
+        state.scripts = state.scripts.filter(s => s.id !== state.currentScriptId);
+        state.currentScriptId = state.scripts[0].id;
+        persistScriptsToStorage();
+        renderScriptList();
+        loadScriptIntoEditor();
+        showToast('Script deleted');
+      });
+
+      document.getElementById('btnExportSingle').addEventListener('click', () => {
+        const cur = getCurrentScript();
+        const blob = new Blob([cur.content], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${cur.title.replace(/\s+/g, '_')}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
 
       scriptTitleInput.addEventListener('input', () => {
         triggerDebouncedSave();
@@ -2572,24 +2133,17 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
       document.getElementById('btnToggleSidebar').addEventListener('click', () => sidebar.classList.toggle('open'));
 
-      // File Imports & Backups
+      // File Import / Drag-drop
       document.getElementById('btnTriggerImport').addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) handleFileImport(e.target.files[0]);
       });
 
-      document.getElementById('btnBackupExport').addEventListener('click', exportAllScriptsBackup);
-      document.getElementById('btnBackupImport').addEventListener('click', () => backupFileInput.click());
-      backupFileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) handleBackupRestore(e.target.files[0]);
-      });
-
-      // Drag and Drop
-      ['dragenter', 'dragover'].forEach(n => editorDropZone.addEventListener(n, (e) => {
+      ['dragenter', 'dragover'].forEach(ev => editorDropZone.addEventListener(ev, (e) => {
         e.preventDefault();
         dropOverlay.classList.add('drag-over');
       }));
-      ['dragleave', 'drop'].forEach(n => editorDropZone.addEventListener(n, (e) => {
+      ['dragleave', 'drop'].forEach(ev => editorDropZone.addEventListener(ev, (e) => {
         e.preventDefault();
         dropOverlay.classList.remove('drag-over');
       }));
@@ -2597,9 +2151,10 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         if (e.dataTransfer.files.length) handleFileImport(e.dataTransfer.files[0]);
       });
 
-      // Prompter HUD Controls
-      document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+      // HUD & Teleprompter Controls
+      btnPlayPause.addEventListener('click', togglePlayPause);
       statusBadge.addEventListener('click', toggleWakeLock);
+
       voiceCruisePill.addEventListener('click', (e) => {
         if (e.target.closest('#btnVoiceCalib')) return;
         toggleVoiceCruise();
@@ -2611,7 +2166,11 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       });
 
       micSensSlider.addEventListener('input', (e) => {
-        setMicSensitivity(e.target.value);
+        state.micSensitivity = parseFloat(e.target.value);
+        micSensValueLabel.textContent = state.micSensitivity.toFixed(3);
+        if (vuThresholdNotch) {
+          vuThresholdNotch.style.left = `${Math.min(100, (state.micSensitivity / 0.08) * 100)}%`;
+        }
       });
 
       document.getElementById('btnResetScroll').addEventListener('click', () => {
@@ -2640,22 +2199,19 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       });
 
       speedSlider.addEventListener('input', (e) => setWPM(parseInt(e.target.value, 10)));
-      scrubberSlider.addEventListener('input', (e) => {
-        scrubToPercent(parseFloat(e.target.value));
-        resetHudTimeout();
-      });
+      scrubberSlider.addEventListener('input', (e) => scrubToPercent(parseFloat(e.target.value)));
+
       fontSizeSlider.addEventListener('input', (e) => {
         state.fontSize = parseInt(e.target.value, 10);
         prompterText.style.fontSize = `${state.fontSize}px`;
-        saveSettings();
       });
       widthSlider.addEventListener('input', (e) => {
         state.readingWidth = parseInt(e.target.value, 10);
         prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
-        saveSettings();
       });
       eyelineSlider.addEventListener('input', (e) => {
-        setEyelineHeight(parseInt(e.target.value, 10));
+        state.eyelinePercent = parseInt(e.target.value, 10);
+        eyelineGuide.style.top = `${state.eyelinePercent}%`;
       });
 
       document.getElementById('btnToggleSettings').addEventListener('click', () => settingsDrawer.classList.toggle('hidden'));
@@ -2663,14 +2219,11 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         state.showEyelineGuide = !state.showEyelineGuide;
         eyelineGuide.classList.toggle('hide', !state.showEyelineGuide);
         document.getElementById('btnToggleGuide').classList.toggle('active', state.showEyelineGuide);
-        saveSettings();
       });
-
       document.getElementById('btnToggleVignette').addEventListener('click', () => {
         state.focusVignette = !state.focusVignette;
         vignetteOverlay.classList.toggle('active', state.focusVignette);
         document.getElementById('btnToggleVignette').classList.toggle('active', state.focusVignette);
-        saveSettings();
       });
 
       document.querySelectorAll('.theme-chip').forEach(c => c.addEventListener('click', () => applyTheme(c.dataset.theme)));
@@ -2681,77 +2234,87 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         else document.exitFullscreen().catch(() => {});
       });
 
-      progressTrack.addEventListener('click', scrubToPosition);
+      progressTrack.addEventListener('click', (e) => {
+        const rect = progressTrack.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        let pct = Math.max(0, Math.min(1, clickX / rect.width));
+        if (state.reverseScroll) pct = 1 - pct;
+        prompterViewport.scrollTop = (prompterViewport.scrollHeight - prompterViewport.clientHeight) * pct;
+        updateProgress();
+      });
+
       prompterView.addEventListener('mousemove', resetHudTimeout);
       prompterViewport.addEventListener('scroll', updateProgress, { passive: true });
 
-      // Shortcuts Modal
+      // Keyboard Controls
       document.getElementById('btnShortcutsModal').addEventListener('click', () => shortcutsModal.classList.add('show'));
       document.getElementById('btnCloseModal').addEventListener('click', () => shortcutsModal.classList.remove('show'));
       shortcutsModal.addEventListener('click', (e) => {
         if (e.target === shortcutsModal) shortcutsModal.classList.remove('show');
       });
 
-      // Hotkey Navigator
-      window.addEventListener('keydown', handleKeyNavigation);
+      window.addEventListener('keydown', (e) => {
+        if (document.activeElement === scriptTitleInput || document.activeElement === scriptContentInput) return;
+
+        if (prompterView.style.display === 'flex') {
+          switch (e.code) {
+            case 'Space':
+              e.preventDefault();
+              togglePlayPause();
+              break;
+            case 'ArrowUp':
+              e.preventDefault();
+              setWPM(state.wpm + 5);
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              setWPM(state.wpm - 5);
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              prompterViewport.scrollTop += 140;
+              updateProgress();
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              prompterViewport.scrollTop -= 140;
+              updateProgress();
+              break;
+            case 'KeyR':
+              e.preventDefault();
+              prompterViewport.scrollTop = state.reverseScroll ? prompterViewport.scrollHeight - prompterViewport.clientHeight : 0;
+              updateProgress();
+              showToast('Restarted');
+              break;
+            case 'KeyM':
+              e.preventDefault();
+              state.mirrorX = !state.mirrorX;
+              updateMirrorTransform();
+              break;
+            case 'KeyF':
+              e.preventDefault();
+              if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+              else document.exitFullscreen().catch(() => {});
+              break;
+            case 'Escape':
+              e.preventDefault();
+              exitPrompter();
+              break;
+          }
+        }
+      });
     }
 
-    function handleKeyNavigation(e) {
-      if (document.activeElement === scriptTitleInput || document.activeElement === scriptContentInput) return;
-
-      if (prompterView.classList.contains('active')) {
-        switch (e.code) {
-          case 'Space':
-            e.preventDefault();
-            togglePlayPause();
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            setWPM(state.wpm + 5);
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            setWPM(state.wpm - 5);
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            prompterViewport.scrollTop += 140;
-            updateProgress();
-            break;
-          case 'ArrowLeft':
-            e.preventDefault();
-            prompterViewport.scrollTop -= 140;
-            updateProgress();
-            break;
-          case 'KeyR':
-            e.preventDefault();
-            prompterViewport.scrollTop = state.reverseScroll ? prompterViewport.scrollHeight - prompterViewport.clientHeight : 0;
-            updateProgress();
-            showToast('Restarted');
-            break;
-          case 'KeyM':
-            e.preventDefault();
-            state.mirrorX = !state.mirrorX;
-            updateMirrorTransform();
-            break;
-          case 'KeyF':
-            e.preventDefault();
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-            else document.exitFullscreen().catch(() => {});
-            break;
-          case 'Escape':
-            e.preventDefault();
-            exitPrompter();
-            break;
-        }
-      } else {
-        if (e.key === '?') {
-          shortcutsModal.classList.toggle('show');
-        }
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', initApp);
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadScriptsFromStorage();
+      renderScriptList();
+      loadScriptIntoEditor();
+      setupEvents();
+      applyTheme('midnight');
+      setWPM(150);
+    });
   </script>
 </body>
 </html>
