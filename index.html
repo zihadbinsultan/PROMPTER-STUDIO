@@ -605,9 +605,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 999px;
-      background: rgba(22, 22, 25, 0.85);
+      background: rgba(22, 22, 25, 0.88);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -627,42 +627,33 @@
 
     .voice-cruise-hud.active {
       color: #f5f5f7;
-      border-color: rgba(41, 151, 255, 0.6);
-      box-shadow: 0 0 18px rgba(41, 151, 255, 0.25);
+      border-color: rgba(41, 151, 255, 0.65);
+      box-shadow: 0 0 20px rgba(41, 151, 255, 0.35);
+      background: rgba(18, 28, 42, 0.88);
     }
 
     .voice-wave {
       display: flex;
       align-items: center;
-      gap: 2px;
-      height: 12px;
+      gap: 2.5px;
+      height: 14px;
     }
 
     .voice-wave-bar {
-      width: 2.5px;
+      width: 3px;
       height: 4px;
       border-radius: 2px;
       background: #8e8e93;
-      transition: height 0.15s ease, background-color 0.2s ease;
+      transition: height 0.08s ease, background-color 0.2s ease;
     }
 
     .voice-cruise-hud.active .voice-wave-bar {
-      background: #2997ff;
-      animation: wavePulse 1s ease-in-out infinite alternate;
-    }
-
-    .voice-cruise-hud.active .voice-wave-bar:nth-child(2) { animation-delay: 0.2s; }
-    .voice-cruise-hud.active .voice-wave-bar:nth-child(3) { animation-delay: 0.4s; }
-    .voice-cruise-hud.active .voice-wave-bar:nth-child(4) { animation-delay: 0.15s; }
-
-    @keyframes wavePulse {
-      0% { height: 4px; }
-      100% { height: 13px; }
+      background: #34c759;
     }
 
     .voice-wpm-badge {
       display: none;
-      padding: 1px 6px;
+      padding: 2px 7px;
       border-radius: 999px;
       background: rgba(41, 151, 255, 0.25);
       color: #64b5ff;
@@ -1141,13 +1132,13 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise Control">
       <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
       <span id="voiceCruiseLabel">VOICE CRUISE: OFF</span>
-      <div class="voice-wave">
-        <span class="voice-wave-bar"></span>
-        <span class="voice-wave-bar"></span>
-        <span class="voice-wave-bar"></span>
-        <span class="voice-wave-bar"></span>
+      <div class="voice-wave" id="voiceWaveContainer">
+        <span class="voice-wave-bar" id="vBar1"></span>
+        <span class="voice-wave-bar" id="vBar2"></span>
+        <span class="voice-wave-bar" id="vBar3"></span>
+        <span class="voice-wave-bar" id="vBar4"></span>
       </div>
-      <span id="voiceLiveWpm" class="voice-wpm-badge">-- WPM</span>
+      <span id="voiceLiveWpm" class="voice-wpm-badge">LISTENING</span>
     </div>
 
     <!-- Apple Minimalist Keep-Awake Pill (No Eye Icon) -->
@@ -1394,13 +1385,13 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       currentDynamicWpm: 150
     };
 
-    // DOM Elements
-    const editorView = document.getElementById('editorView');
-    const prompterView = document.getElementById('prompterView');
-    const scriptList = document.getElementById('scriptList');
-    const scriptTitleInput = document.getElementById('scriptTitleInput');
-    const scriptContentInput = document.getElementById('scriptContentInput');
-    const wordCountLabel = document.getElementById('wordCountLabel');
+    // Audio & Mic Analysis State
+    let audioContext = null;
+    let micMediaStream = null;
+    let micAnalyserNode = null;
+    let micDataArray = null;
+    let isUserSpeaking = false;
+    let voiceScrollVelocity = 0;
     const readingTimeLabel = document.getElementById('readingTimeLabel');
     const saveStatus = document.getElementById('saveStatus');
     const fileInput = document.getElementById('fileInput');
@@ -1880,17 +1871,31 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       const delta = (currentTimestamp - lastTimestamp) / 1000;
       lastTimestamp = currentTimestamp;
 
-      // Determine active WPM: blend towards dynamic speech WPM if Voice Cruise is active
-      let targetWpm = state.wpm;
+      let effectiveWpm = state.wpm;
+
+      // In Voice Cruise mode, dynamically modulate velocity based on detected speech
       if (state.voiceCruiseActive) {
-        // Ease towards dynamic WPM
-        state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.08;
-        targetWpm = state.currentDynamicWpm;
+        // Smoothly ramp up velocity when speaking, gently decay to 0 on silence
+        const targetVelocityFactor = isUserSpeaking ? 1.0 : 0.0;
+        voiceScrollVelocity += (targetVelocityFactor - voiceScrollVelocity) * 0.14;
+
+        if (targetVoiceWpm > 0 && isUserSpeaking) {
+          state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.08;
+          effectiveWpm = state.currentDynamicWpm;
+        }
+
+        // If user stopped talking and velocity dropped near zero, avoid creeping
+        if (voiceScrollVelocity < 0.02) {
+          animationFrameId = requestAnimationFrame(scrollStep);
+          return;
+        }
+
+        effectiveWpm *= voiceScrollVelocity;
       }
 
       // Calibration: Convert WPM into precise vertical pixel speed based on typography
       // Average line ~ 8.5 words. Pixel height per line ~ fontSize * 1.55.
-      const wordsPerSec = targetWpm / 60;
+      const wordsPerSec = effectiveWpm / 60;
       const lineHeightPx = state.fontSize * 1.55;
       const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
       const movement = pxPerSecond * delta;
@@ -1917,112 +1922,208 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     }
 
     // -------------------------------------------------------------
-    // 8. Dynamic Voice Cruise Engine (Web Speech API)
+    // 8. Dual Voice-Sensing Engine: Audio Energy (VAD) + Web Speech API
     // -------------------------------------------------------------
     let speechRecognizer = null;
     let spokenWordsTimeline = [];
     let targetVoiceWpm = 150;
     let silenceTimer = null;
+    let micMonitorInterval = null;
+
+    const vBars = [
+      document.getElementById('vBar1'),
+      document.getElementById('vBar2'),
+      document.getElementById('vBar3'),
+      document.getElementById('vBar4')
+    ];
+
+    async function initHardwareAudioAnalyser() {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        if (!micMediaStream) {
+          micMediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+        }
+
+        const source = audioContext.createMediaStreamSource(micMediaStream);
+        micAnalyserNode = audioContext.createAnalyser();
+        micAnalyserNode.fftSize = 128;
+        micAnalyserNode.smoothingTimeConstant = 0.5;
+        source.connect(micAnalyserNode);
+
+        micDataArray = new Uint8Array(micAnalyserNode.frequencyBinCount);
+
+        // Start high-frequency mic volume monitor
+        if (micMonitorInterval) clearInterval(micMonitorInterval);
+        micMonitorInterval = setInterval(sampleMicrophoneLevel, 40);
+
+        return true;
+      } catch (err) {
+        console.warn('Microphone permission or AudioContext error:', err);
+        return false;
+      }
+    }
+
+    function sampleMicrophoneLevel() {
+      if (!micAnalyserNode || !state.voiceCruiseActive) return;
+
+      micAnalyserNode.getByteFrequencyData(micDataArray);
+      let sum = 0;
+      for (let i = 0; i < micDataArray.length; i++) {
+        sum += micDataArray[i];
+      }
+      const avgVolume = sum / micDataArray.length;
+
+      // Animate waveform bars based on real physical microphone energy
+      const normalizedVol = Math.min(1, avgVolume / 70);
+      if (vBars[0]) {
+        vBars[0].style.height = `${Math.max(4, normalizedVol * 16)}px`;
+        vBars[1].style.height = `${Math.max(4, normalizedVol * 22)}px`;
+        vBars[2].style.height = `${Math.max(4, normalizedVol * 18)}px`;
+        vBars[3].style.height = `${Math.max(4, normalizedVol * 13)}px`;
+      }
+
+      // Voice Activity Threshold: avgVolume > 14 indicates user is speaking aloud
+      const speechDetected = avgVolume > 14;
+      if (speechDetected) {
+        isUserSpeaking = true;
+        if (voiceLiveWpm && voiceLiveWpm.textContent === 'PAUSED') {
+          voiceLiveWpm.textContent = `${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
+        }
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+          isUserSpeaking = false;
+          if (voiceLiveWpm && state.voiceCruiseActive) {
+            voiceLiveWpm.textContent = 'PAUSED';
+          }
+        }, 1200);
+      }
+    }
 
     function initSpeechEngine() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
+      if (!SpeechRecognition) return null;
+
+      try {
+        const recognizer = new SpeechRecognition();
+        recognizer.continuous = true;
+        recognizer.interimResults = true;
+        recognizer.lang = 'en-US';
+
+        recognizer.onresult = (event) => {
+          const now = performance.now();
+          let transcriptChunk = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcriptChunk += event.results[i][0].transcript + ' ';
+          }
+          const words = transcriptChunk.trim().split(/\s+/).filter(w => w.length > 0);
+          if (words.length > 0) {
+            isUserSpeaking = true;
+            for (let k = 0; k < words.length; k++) {
+              spokenWordsTimeline.push(now);
+            }
+            spokenWordsTimeline = spokenWordsTimeline.filter(t => now - t <= 4000);
+
+            if (spokenWordsTimeline.length >= 3) {
+              const durationSec = Math.max(1, (now - spokenWordsTimeline[0]) / 1000);
+              const calculatedWpm = Math.round((spokenWordsTimeline.length / durationSec) * 60);
+              targetVoiceWpm = Math.max(70, Math.min(260, calculatedWpm));
+              state.currentDynamicWpm = targetVoiceWpm;
+              voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
+            }
+          }
+        };
+
+        recognizer.onerror = (e) => {
+          if (e.error === 'not-allowed') {
+            showToast('Microphone access denied in browser settings');
+          }
+        };
+
+        recognizer.onend = () => {
+          if (state.voiceCruiseActive) {
+            try { recognizer.start(); } catch (err) {}
+          }
+        };
+
+        return recognizer;
+      } catch (err) {
         return null;
       }
-      const recognizer = new SpeechRecognition();
-      recognizer.continuous = true;
-      recognizer.interimResults = true;
-      recognizer.lang = 'en-US';
-
-      recognizer.onresult = (event) => {
-        const now = performance.now();
-        let transcriptChunk = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcriptChunk += event.results[i][0].transcript + ' ';
-        }
-        const words = transcriptChunk.trim().split(/\s+/).filter(w => w.length > 0);
-        if (words.length > 0) {
-          // Push words with timestamp
-          for (let k = 0; k < words.length; k++) {
-            spokenWordsTimeline.push(now);
-          }
-          // Filter to words in last 4 seconds
-          spokenWordsTimeline = spokenWordsTimeline.filter(t => now - t <= 4000);
-
-          if (spokenWordsTimeline.length >= 3) {
-            // Calculate spoken words per minute
-            const durationSec = Math.max(1, (now - spokenWordsTimeline[0]) / 1000);
-            const calculatedWpm = Math.round((spokenWordsTimeline.length / durationSec) * 60);
-            targetVoiceWpm = Math.max(50, Math.min(280, calculatedWpm));
-            voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
-          }
-
-          // Reset silence decay timer
-          if (silenceTimer) clearTimeout(silenceTimer);
-          silenceTimer = setTimeout(() => {
-            if (state.voiceCruiseActive) {
-              // Smoothly glide down speed when user pauses talking
-              targetVoiceWpm = Math.max(25, state.wpm * 0.3);
-              voiceLiveWpm.textContent = 'PAUSED';
-            }
-          }, 2400);
-        }
-      };
-
-      recognizer.onerror = (e) => {
-        if (e.error === 'not-allowed') {
-          showToast('Microphone access denied');
-          stopVoiceCruise();
-        }
-      };
-
-      recognizer.onend = () => {
-        if (state.voiceCruiseActive) {
-          try { recognizer.start(); } catch (err) {}
-        }
-      };
-
-      return recognizer;
     }
 
-    function toggleVoiceCruise() {
-      if (!speechRecognizer) {
-        speechRecognizer = initSpeechEngine();
-      }
-      if (!speechRecognizer) {
-        showToast('Speech recognition not supported in this browser');
-        return;
-      }
-
-      state.voiceCruiseActive = !state.voiceCruiseActive;
-
-      if (state.voiceCruiseActive) {
-        try {
-          speechRecognizer.start();
-          voiceCruisePill.classList.add('active');
-          voiceCruiseLabel.textContent = 'VOICE CRUISE: ON';
-          spokenWordsTimeline = [];
-          targetVoiceWpm = state.wpm;
-          state.currentDynamicWpm = state.wpm;
-          voiceLiveWpm.textContent = `${state.wpm} WPM`;
-          showToast('Voice Cruise Active: Speak to guide speed');
-        } catch (e) {
-          console.warn(e);
+    async function toggleVoiceCruise() {
+      if (!state.voiceCruiseActive) {
+        showToast('Requesting microphone...');
+        const hardwareMicOk = await initHardwareAudioAnalyser();
+        if (!hardwareMicOk) {
+          showToast('Could not access microphone. Check permissions.');
+          return;
         }
+
+        state.voiceCruiseActive = true;
+        voiceCruisePill.classList.add('active');
+        voiceCruiseLabel.textContent = 'VOICE CRUISE: ON';
+        voiceLiveWpm.textContent = 'SPEAK ALOUD';
+        spokenWordsTimeline = [];
+        targetVoiceWpm = state.wpm;
+        state.currentDynamicWpm = state.wpm;
+        voiceScrollVelocity = 0;
+        isUserSpeaking = false;
+
+        // Start optional SpeechRecognition for cadence refinement
+        if (!speechRecognizer) {
+          speechRecognizer = initSpeechEngine();
+        }
+        if (speechRecognizer) {
+          try { speechRecognizer.start(); } catch (e) {}
+        }
+
+        // Automatically start the animation loop if paused
+        if (!state.isPlaying) {
+          playPrompter();
+        }
+        showToast('Voice mode active: Speak to scroll, stop to pause');
       } else {
         stopVoiceCruise();
+        showToast('Voice Cruise deactivated');
       }
     }
 
     function stopVoiceCruise() {
       state.voiceCruiseActive = false;
+      isUserSpeaking = false;
+      voiceScrollVelocity = 1.0;
+
+      if (micMonitorInterval) {
+        clearInterval(micMonitorInterval);
+        micMonitorInterval = null;
+      }
+
       if (speechRecognizer) {
         try { speechRecognizer.stop(); } catch (e) {}
       }
+
       voiceCruisePill.classList.remove('active');
       voiceCruiseLabel.textContent = 'VOICE CRUISE: OFF';
       voiceLiveWpm.textContent = '-- WPM';
       if (silenceTimer) clearTimeout(silenceTimer);
+
+      // Reset waveform bars to rest position
+      vBars.forEach(bar => {
+        if (bar) bar.style.height = '4px';
+      });
     }
 
     function exitPrompter() {
