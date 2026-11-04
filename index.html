@@ -1120,14 +1120,21 @@
 
         <div id="voiceCalibPopover" class="voice-calib-popover">
           <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #86868b;">
-            <span>Mic Sensitivity</span>
-            <span id="micSensValueLabel" style="color: #64b5ff;">0.020</span>
+            <span>Mic Trigger Threshold</span>
+            <span id="micSensValueLabel" style="color: #64b5ff;">0.008</span>
           </div>
-          <input type="range" id="micSensSlider" class="hud-slider" style="width: 100%;" min="0.005" max="0.080" step="0.001" value="0.020">
+          <input type="range" id="micSensSlider" class="hud-slider" style="width: 100%;" min="0.001" max="0.050" step="0.001" value="0.008">
           <div class="vu-meter-track">
             <div id="vuMeterBar" class="vu-meter-bar"></div>
-            <div id="vuThresholdNotch" class="vu-threshold-notch" style="left: 25%;"></div>
+            <div id="vuThresholdNotch" class="vu-threshold-notch" style="left: 16%;"></div>
           </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #86868b; margin-top: 2px;">
+            <span id="micLiveRmsText">Level: 0.000</span>
+            <button id="btnAutoCalibMic" class="btn" style="padding: 2px 8px; font-size: 0.65rem; border-radius: 6px;">Auto-Tune</button>
+          </div>
+          <select id="micDeviceSelect" style="background: rgba(255,255,255,0.08); color: #f5f5f7; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 4px 6px; font-size: 0.7rem; outline: none; width: 100%; margin-top: 2px;">
+            <option value="">Default Microphone</option>
+          </select>
         </div>
       </div>
 
@@ -1302,7 +1309,8 @@
       hasStartedFirstTake: false,
       voiceCruiseActive: false,
       currentDynamicWpm: 150,
-      micSensitivity: 0.020
+      micSensitivity: 0.008,
+      selectedMicDeviceId: ''
     };
 
     // Default Starting Script
@@ -1358,18 +1366,23 @@
     const micSensValueLabel = document.getElementById('micSensValueLabel');
     const vuMeterBar = document.getElementById('vuMeterBar');
     const vuThresholdNotch = document.getElementById('vuThresholdNotch');
+    const micLiveRmsText = document.getElementById('micLiveRmsText');
+    const btnAutoCalibMic = document.getElementById('btnAutoCalibMic');
+    const micDeviceSelect = document.getElementById('micDeviceSelect');
     const sessionTimerDisplay = document.getElementById('sessionTimerDisplay');
     const sessionRemainingDisplay = document.getElementById('sessionRemainingDisplay');
     const sessionRecDot = document.getElementById('sessionRecDot');
     const shortcutsModal = document.getElementById('shortcutsModal');
     const toast = document.getElementById('toast');
 
-    // Audio & Session State
+    // Audio, Sub-Pixel Scroll & Session State
+    let virtualScrollY = 0;
     let audioContext = null;
     let micMediaStream = null;
     let micAnalyserNode = null;
     let micSourceNode = null;
-    let micDataArray = null;
+    let micGainSinkNode = null;
+    let micFloatArray = null;
     let isUserSpeaking = false;
     let voiceScrollVelocity = 0;
     let micMonitorInterval = null;
@@ -1382,7 +1395,8 @@
     let micPeakSeen = 0;
     let micStartedAt = 0;
     let micWarned = false;
-    const VOICE_HOLD_MS = 450;
+    let ambientNoiseFloor = 0.002;
+    const VOICE_HOLD_MS = 650;
 
     let sessionStartTime = null;
     let sessionElapsedSeconds = 0;
@@ -1543,12 +1557,13 @@
 
         // Position text parked at eyeline (Paused by default!)
         if (state.reverseScroll) {
-          prompterViewport.scrollTop = current && current.lastPosition > 0 
+          virtualScrollY = current && current.lastPosition > 0 
             ? current.lastPosition 
             : prompterViewport.scrollHeight - prompterViewport.clientHeight;
         } else {
-          prompterViewport.scrollTop = current ? (current.lastPosition || 0) : 0;
+          virtualScrollY = current ? (current.lastPosition || 0) : 0;
         }
+        prompterViewport.scrollTop = virtualScrollY;
 
         updatePlayButtonUI(false);
         state.isPlaying = false;
@@ -1654,6 +1669,7 @@
     function playPrompter() {
       if (state.isPlaying) return;
       state.isPlaying = true;
+      virtualScrollY = prompterViewport.scrollTop;
       updatePlayButtonUI(true);
       startSessionTimer();
       lastTimestamp = performance.now();
@@ -1680,7 +1696,8 @@
     function scrollStep(currentTimestamp) {
       if (!state.isPlaying) return;
 
-      const delta = (currentTimestamp - lastTimestamp) / 1000;
+      const rawDelta = (currentTimestamp - lastTimestamp) / 1000;
+      const delta = Math.min(0.1, Math.max(0.001, rawDelta));
       lastTimestamp = currentTimestamp;
 
       let effectiveWpm = state.wpm;
@@ -1688,37 +1705,47 @@
       // Dynamic Voice Modulation
       if (state.voiceCruiseActive) {
         const targetVelocityFactor = isUserSpeaking ? 1.0 : 0.0;
-        voiceScrollVelocity += (targetVelocityFactor - voiceScrollVelocity) * 0.15;
+        // Fast attack when speaking starts, smooth glide when pausing
+        const smoothing = isUserSpeaking ? 0.32 : 0.14;
+        voiceScrollVelocity += (targetVelocityFactor - voiceScrollVelocity) * smoothing;
 
         if (targetVoiceWpm > 0 && isUserSpeaking) {
-          state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.08;
+          state.currentDynamicWpm += (targetVoiceWpm - state.currentDynamicWpm) * 0.12;
           effectiveWpm = state.currentDynamicWpm;
         }
 
-        if (voiceScrollVelocity < 0.02) {
+        if (voiceScrollVelocity < 0.015) {
+          voiceScrollVelocity = 0;
           animationFrameId = requestAnimationFrame(scrollStep);
           return;
         }
         effectiveWpm *= voiceScrollVelocity;
       }
 
-      // WPM to Pixel Movement Calibration
+      // WPM to Sub-Pixel Movement Calibration (prevents browser scrollTop integer truncation!)
       const wordsPerSec = effectiveWpm / 60;
       const lineHeightPx = state.fontSize * 1.55;
-      const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
+      const pxPerSecond = (wordsPerSec / 7.5) * lineHeightPx;
       const movement = pxPerSecond * delta;
 
+      // Sync virtualScrollY if user manually dragged scrollbar or scrubbed
+      if (Math.abs(prompterViewport.scrollTop - virtualScrollY) > 45) {
+        virtualScrollY = prompterViewport.scrollTop;
+      }
+
       if (state.reverseScroll) {
-        prompterViewport.scrollTop -= movement;
-        if (prompterViewport.scrollTop <= 2) {
+        virtualScrollY = Math.max(0, virtualScrollY - movement);
+        prompterViewport.scrollTop = virtualScrollY;
+        if (virtualScrollY <= 1) {
           pausePrompter();
           showToast('Reached beginning');
           return;
         }
       } else {
-        prompterViewport.scrollTop += movement;
         const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
-        if (prompterViewport.scrollTop >= maxScroll - 2) {
+        virtualScrollY = Math.min(maxScroll, virtualScrollY + movement);
+        prompterViewport.scrollTop = virtualScrollY;
+        if (maxScroll > 10 && virtualScrollY >= maxScroll - 1) {
           pausePrompter();
           showToast('Finished script');
           return;
@@ -1729,7 +1756,7 @@
       animationFrameId = requestAnimationFrame(scrollStep);
     }
 
-    // 5. Voice Cruise Engine
+    // 5. Dual-Engine Voice Cruise (32-bit Float WebAudio + Active Sink + Web Speech Hybrid)
     const vBars = [
       document.getElementById('vBar1'),
       document.getElementById('vBar2'),
@@ -1738,22 +1765,42 @@
     ];
 
     function micErrorMessage(err) {
-      if (!window.isSecureContext) return 'Mic needs HTTPS. Open the https:// link, not http://';
+      if (!window.isSecureContext) return 'Mic needs HTTPS. Open via https:// or localhost';
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        return 'Microphone is not available in this browser';
+        return 'Microphone API unavailable in this browser';
       }
       switch (err && err.name) {
         case 'NotAllowedError':
         case 'SecurityError':
-          return 'Microphone blocked. Allow it in site settings, then try again';
+          return 'Mic permission blocked. Allow microphone in browser address bar';
         case 'NotFoundError':
         case 'OverconstrainedError':
-          return 'No microphone found';
+          return 'No microphone hardware detected';
         case 'NotReadableError':
-          return 'Microphone is being used by another app';
+          return 'Microphone is locked by another application';
         default:
           return 'Mic error: ' + ((err && err.message) || err);
       }
+    }
+
+    async function populateMicDevices() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+        if (!audioInputs.length) return;
+        const currentVal = state.selectedMicDeviceId || micDeviceSelect.value;
+        micDeviceSelect.innerHTML = '';
+        audioInputs.forEach((dev, idx) => {
+          const opt = document.createElement('option');
+          opt.value = dev.deviceId;
+          opt.textContent = dev.label || `Microphone ${idx + 1}`;
+          micDeviceSelect.appendChild(opt);
+        });
+        if (currentVal && audioInputs.some(d => d.deviceId === currentVal)) {
+          micDeviceSelect.value = currentVal;
+        }
+      } catch (_) {}
     }
 
     async function initHardwareAudioAnalyser() {
@@ -1761,44 +1808,109 @@
         throw new Error('getUserMedia unavailable');
       }
 
-      // Create + resume inside the user gesture call stack (before any await) so iOS/Chrome allow audio
       if (!audioContext) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) throw new Error('Web Audio unsupported');
         audioContext = new AC();
       }
-      const resumeEarly = audioContext.state !== 'running'
-        ? audioContext.resume().catch(() => {})
-        : Promise.resolve();
-
-      const hasLiveTrack = micMediaStream &&
-        micMediaStream.getAudioTracks().some(t => t.readyState === 'live');
-      if (!hasLiveTrack) {
-        micMediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-        });
-      }
-
-      // Resume context again after permissions prompt resolves
-      await resumeEarly;
       if (audioContext.state !== 'running') {
         try { await audioContext.resume(); } catch (_) {}
       }
 
-      // Tear down any previous graph so nodes don't pile up
-      if (micSourceNode) {
-        try { micSourceNode.disconnect(); } catch (_) {}
+      // Stop old stream tracks before requesting fresh stream
+      if (micMediaStream) {
+        micMediaStream.getTracks().forEach(t => t.stop());
+        micMediaStream = null;
       }
+
+      // Request clean audio without aggressive browser auto-gain crushing speech peaks
+      const audioConstraints = {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: true
+      };
+      if (state.selectedMicDeviceId) {
+        audioConstraints.deviceId = { exact: state.selectedMicDeviceId };
+      }
+
+      try {
+        micMediaStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+      } catch (_) {
+        // Fallback to basic constraints if device/flags rejected
+        micMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+
+      await populateMicDevices();
+
+      if (audioContext.state !== 'running') {
+        try { await audioContext.resume(); } catch (_) {}
+      }
+
+      // Clean up old nodes
+      if (micSourceNode) { try { micSourceNode.disconnect(); } catch (_) {} }
+      if (micAnalyserNode) { try { micAnalyserNode.disconnect(); } catch (_) {} }
+      if (micGainSinkNode) { try { micGainSinkNode.disconnect(); } catch (_) {} }
+
       micSourceNode = audioContext.createMediaStreamSource(micMediaStream);
       micAnalyserNode = audioContext.createAnalyser();
       micAnalyserNode.fftSize = 1024;
-      micAnalyserNode.smoothingTimeConstant = 0.4;
+      micAnalyserNode.smoothingTimeConstant = 0.25;
+
+      // CRITICAL FIX: Connect analyser to a zero-gain sink connected to destination
+      // This forces Chrome/Safari/Edge to actively pull live audio buffers on every frame
+      micGainSinkNode = audioContext.createGain();
+      micGainSinkNode.gain.value = 0;
+
       micSourceNode.connect(micAnalyserNode);
-      micDataArray = new Uint8Array(micAnalyserNode.fftSize);
+      micAnalyserNode.connect(micGainSinkNode);
+      micGainSinkNode.connect(audioContext.destination);
+
+      micFloatArray = new Float32Array(micAnalyserNode.fftSize);
 
       if (micMonitorInterval) clearInterval(micMonitorInterval);
-      micMonitorInterval = setInterval(sampleMicrophoneLevel, 35);
+      micMonitorInterval = setInterval(sampleMicrophoneLevel, 30);
       return true;
+    }
+
+    function startParallelSpeechRecognition() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      try {
+        if (speechRecognizer) {
+          try { speechRecognizer.onend = null; speechRecognizer.stop(); } catch (_) {}
+        }
+        speechRecognizer = new SpeechRec();
+        speechRecognizer.continuous = true;
+        speechRecognizer.interimResults = true;
+        speechRecognizer.lang = navigator.language || 'en-US';
+
+        speechRecognizer.onresult = (event) => {
+          if (!state.voiceCruiseActive) return;
+          const now = performance.now();
+          // Speech recognizer positively heard words -> trigger speaking state immediately!
+          lastSpeechAt = now;
+          isUserSpeaking = true;
+
+          let latestTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            latestTranscript += event.results[i][0].transcript + ' ';
+          }
+          const wordCount = latestTranscript.trim().split(/\s+/).filter(Boolean).length;
+          if (wordCount > 0) {
+            spokenWordsTimeline.push({ time: now, count: 1 });
+            spokenWordsTimeline = spokenWordsTimeline.filter(item => now - item.time < 4000);
+          }
+        };
+
+        speechRecognizer.onend = () => {
+          if (state.voiceCruiseActive) {
+            try { speechRecognizer.start(); } catch (_) {}
+          }
+        };
+
+        speechRecognizer.start();
+      } catch (_) {}
     }
 
     function sampleMicrophoneLevel() {
@@ -1808,16 +1920,46 @@
         audioContext.resume().catch(() => {});
       }
 
-      micAnalyserNode.getByteTimeDomainData(micDataArray);
+      // Use 32-bit float waveform data (or fallback to byte data on older browsers)
       let sum = 0;
-      for (let i = 0; i < micDataArray.length; i++) {
-        const sample = (micDataArray[i] - 128) / 128;
-        sum += sample * sample;
+      if (micAnalyserNode.getFloatTimeDomainData) {
+        micAnalyserNode.getFloatTimeDomainData(micFloatArray);
+        for (let i = 0; i < micFloatArray.length; i++) {
+          const s = micFloatArray[i];
+          sum += s * s;
+        }
+      } else {
+        const byteArr = new Uint8Array(micAnalyserNode.fftSize);
+        micAnalyserNode.getByteTimeDomainData(byteArr);
+        for (let i = 0; i < byteArr.length; i++) {
+          const s = (byteArr[i] - 128) / 128;
+          sum += s * s;
+        }
       }
-      const rms = Math.sqrt(sum / micDataArray.length);
+
+      // Also check frequency bin energy in case time-domain DC offset is filtered
+      const freqBins = new Uint8Array(micAnalyserNode.frequencyBinCount);
+      micAnalyserNode.getByteFrequencyData(freqBins);
+      let voiceBandSum = 0;
+      // Bins 2 to 45 correspond roughly to human fundamental speech frequencies (85Hz - 2000Hz)
+      const maxBin = Math.min(45, freqBins.length);
+      for (let i = 2; i < maxBin; i++) {
+        voiceBandSum += freqBins[i] / 255;
+      }
+      const freqRms = (voiceBandSum / (maxBin - 2)) * 0.08;
+
+      const timeRms = Math.sqrt(sum / micFloatArray.length);
+      const rms = Math.max(timeRms, freqRms);
       micPeakSeen = Math.max(micPeakSeen, rms);
 
-      const normalizedVol = Math.min(1, rms * 14);
+      // Update live diagnostic text
+      if (micLiveRmsText) {
+        micLiveRmsText.textContent = `Level: ${rms.toFixed(3)} ${isUserSpeaking ? '• SPEAKING' : ''}`;
+        micLiveRmsText.style.color = isUserSpeaking ? '#34c759' : '#86868b';
+      }
+
+      // Animate waveform bars and VU meter
+      const normalizedVol = Math.min(1, rms / Math.max(0.025, state.micSensitivity * 2.5));
       if (vBars[0]) {
         vBars[0].style.height = `${Math.max(4, normalizedVol * 16)}px`;
         vBars[1].style.height = `${Math.max(4, normalizedVol * 22)}px`;
@@ -1825,28 +1967,64 @@
         vBars[3].style.height = `${Math.max(4, normalizedVol * 13)}px`;
       }
       if (vuMeterBar) {
-        vuMeterBar.style.width = `${Math.min(100, (rms / 0.08) * 100)}%`;
+        vuMeterBar.style.width = `${Math.min(100, (rms / 0.05) * 100)}%`;
       }
 
-      // Hysteresis voice detection
+      // Hysteresis voice detection: easier to sustain speaking than to trigger from silence
       const now = performance.now();
       const startThreshold = state.micSensitivity;
-      const keepThreshold = state.micSensitivity * 0.6;
+      const keepThreshold = state.micSensitivity * 0.55;
 
-      if (rms > (isUserSpeaking ? keepThreshold : startThreshold)) {
+      if (rms >= (isUserSpeaking ? keepThreshold : startThreshold)) {
         lastSpeechAt = now;
         isUserSpeaking = true;
-        voiceLiveWpm.textContent = `${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
+        voiceLiveWpm.textContent = `SCROLLING • ${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
+        voiceLiveWpm.style.background = 'rgba(52, 199, 89, 0.25)';
+        voiceLiveWpm.style.color = '#34c759';
       } else if (isUserSpeaking && now - lastSpeechAt > VOICE_HOLD_MS) {
         isUserSpeaking = false;
-        voiceLiveWpm.textContent = 'PAUSED';
+        voiceLiveWpm.textContent = 'PAUSED (SILENT)';
+        voiceLiveWpm.style.background = 'rgba(41, 151, 255, 0.22)';
+        voiceLiveWpm.style.color = '#64b5ff';
       }
 
-      // Diagnostic: mic connected but completely silent
-      if (!micWarned && now - micStartedAt > 3000 && micPeakSeen < 0.003) {
+      // Diagnostic warning if hardware stream is completely dead/muted after 3.5 seconds
+      if (!micWarned && now - micStartedAt > 3500 && micPeakSeen < 0.0005) {
         micWarned = true;
-        showToast('Mic looks silent. Check input device or unmute it', 4500);
+        voiceCalibPopover.classList.add('open');
+        showToast('Mic input reads 0.000 — select another Mic in the top-left menu or check mute', 5000);
       }
+    }
+
+    function autoCalibrateMicThreshold() {
+      if (!state.voiceCruiseActive || !micAnalyserNode) {
+        showToast('Turn on Voice Cruise first to auto-tune');
+        return;
+      }
+      showToast('Sampling room noise for 1 second...');
+      let samples = [];
+      const sampler = setInterval(() => {
+        if (!micFloatArray) return;
+        micAnalyserNode.getFloatTimeDomainData(micFloatArray);
+        let s = 0;
+        for (let i = 0; i < micFloatArray.length; i++) s += micFloatArray[i] * micFloatArray[i];
+        samples.push(Math.sqrt(s / micFloatArray.length));
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(sampler);
+        if (!samples.length) return;
+        const avgNoise = samples.reduce((a, b) => a + b, 0) / samples.length;
+        // Set threshold slightly above ambient room noise
+        const tuned = Math.max(0.002, Math.min(0.045, avgNoise * 2.2 + 0.003));
+        state.micSensitivity = tuned;
+        micSensSlider.value = tuned.toFixed(3);
+        micSensValueLabel.textContent = tuned.toFixed(3);
+        if (vuThresholdNotch) {
+          vuThresholdNotch.style.left = `${Math.min(100, (tuned / 0.05) * 100)}%`;
+        }
+        showToast(`Tuned threshold to ${tuned.toFixed(3)} — Speak now!`);
+      }, 1000);
     }
 
     async function toggleVoiceCruise() {
@@ -1857,7 +2035,7 @@
       }
       if (voiceStarting) return;
       voiceStarting = true;
-      showToast('Accessing microphone...');
+      showToast('Connecting microphone...');
 
       try {
         await initHardwareAudioAnalyser();
@@ -1872,7 +2050,7 @@
       state.voiceCruiseActive = true;
       voiceCruisePill.classList.add('active');
       voiceCruiseLabel.textContent = 'VOICE CRUISE: ON';
-      voiceLiveWpm.textContent = 'SPEAK ALOUD';
+      voiceLiveWpm.textContent = 'SPEAK NOW';
       spokenWordsTimeline = [];
       targetVoiceWpm = state.wpm;
       state.currentDynamicWpm = state.wpm;
@@ -1882,11 +2060,15 @@
       micWarned = false;
       micStartedAt = performance.now();
 
+      // Start parallel Web Speech recognizer as secondary trigger
+      startParallelSpeechRecognition();
+
+      // Ensure teleprompter loop is actively running immediately
+      state.hasStartedFirstTake = true;
       if (!state.isPlaying) {
-        state.hasStartedFirstTake = true; // skip countdown when voice starts take
         playPrompter();
       }
-      showToast('Voice Cruise: speak to scroll, pause to stop');
+      showToast('Voice Cruise active: speak aloud to scroll!');
     }
 
     function stopVoiceCruise() {
@@ -1898,11 +2080,25 @@
         clearInterval(micMonitorInterval);
         micMonitorInterval = null;
       }
+      if (speechRecognizer) {
+        try {
+          speechRecognizer.onend = null;
+          speechRecognizer.stop();
+        } catch (_) {}
+        speechRecognizer = null;
+      }
       if (micSourceNode) {
         try { micSourceNode.disconnect(); } catch (_) {}
         micSourceNode = null;
       }
-      micAnalyserNode = null;
+      if (micAnalyserNode) {
+        try { micAnalyserNode.disconnect(); } catch (_) {}
+        micAnalyserNode = null;
+      }
+      if (micGainSinkNode) {
+        try { micGainSinkNode.disconnect(); } catch (_) {}
+        micGainSinkNode = null;
+      }
       if (micMediaStream) {
         micMediaStream.getTracks().forEach(t => t.stop());
         micMediaStream = null;
@@ -1911,6 +2107,8 @@
       voiceCruisePill.classList.remove('active');
       voiceCruiseLabel.textContent = 'VOICE CRUISE: OFF';
       voiceLiveWpm.textContent = 'SPEAK ALOUD';
+      voiceLiveWpm.style.background = '';
+      voiceLiveWpm.style.color = '';
       voiceCalibPopover.classList.remove('open');
       if (silenceTimer) clearTimeout(silenceTimer);
 
@@ -1992,7 +2190,8 @@
       const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
       let effectivePct = pctVal / 100;
       if (state.reverseScroll) effectivePct = 1 - effectivePct;
-      prompterViewport.scrollTop = maxScroll * effectivePct;
+      virtualScrollY = maxScroll * effectivePct;
+      prompterViewport.scrollTop = virtualScrollY;
       updateProgress();
     }
 
@@ -2243,14 +2442,36 @@
         state.micSensitivity = parseFloat(e.target.value);
         micSensValueLabel.textContent = state.micSensitivity.toFixed(3);
         if (vuThresholdNotch) {
-          vuThresholdNotch.style.left = `${Math.min(100, (state.micSensitivity / 0.08) * 100)}%`;
+          vuThresholdNotch.style.left = `${Math.min(100, (state.micSensitivity / 0.05) * 100)}%`;
         }
       });
 
+      if (btnAutoCalibMic) {
+        btnAutoCalibMic.addEventListener('click', (e) => {
+          e.stopPropagation();
+          autoCalibrateMicThreshold();
+        });
+      }
+
+      if (micDeviceSelect) {
+        micDeviceSelect.addEventListener('change', async (e) => {
+          state.selectedMicDeviceId = e.target.value;
+          if (state.voiceCruiseActive) {
+            try {
+              await initHardwareAudioAnalyser();
+              showToast('Switched microphone input');
+            } catch (err) {
+              showToast(micErrorMessage(err));
+            }
+          }
+        });
+      }
+
       document.getElementById('btnResetScroll').addEventListener('click', () => {
-        prompterViewport.scrollTop = state.reverseScroll 
+        virtualScrollY = state.reverseScroll 
           ? prompterViewport.scrollHeight - prompterViewport.clientHeight 
           : 0;
+        prompterViewport.scrollTop = virtualScrollY;
         updateProgress();
         stopSessionTimer();
         showToast('Restarted');
