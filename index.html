@@ -1798,39 +1798,47 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     let hudHideTimeout = null;
 
     function startPrompter() {
-      saveCurrentScriptFromEditor();
-      const current = getCurrentScript();
-      if (!current || !current.content.trim()) {
-        showToast('Please enter script text first');
-        return;
+      try {
+        saveCurrentScriptFromEditor();
+        const current = getCurrentScript();
+        if (!current || !current.content.trim()) {
+          showToast('Please enter script text first');
+          return;
+        }
+
+        // 1. Render sanitized HTML into teleprompter view
+        prompterText.innerHTML = cleanMarkdownToSanitizedHTML(current.content);
+
+        // 2. Perform smooth, uninterrupted view switch
+        editorView.classList.remove('active');
+        prompterView.classList.add('active');
+
+        // 3. Set starting scroll anchor position
+        if (state.reverseScroll) {
+          prompterViewport.scrollTop = current.lastPosition > 0 
+            ? current.lastPosition 
+            : prompterViewport.scrollHeight - prompterViewport.clientHeight;
+        } else {
+          prompterViewport.scrollTop = current.lastPosition || 0;
+        }
+
+        // 4. Initialize telemetry and interface state
+        resetHudTimeout();
+        updateProgress();
+        updateSessionTiming();
+        updatePlayButtonUI(false);
+        state.hasStartedFirstTake = false;
+
+        // 5. Silent, non-blocking background Wake Lock request (never throws or halts transition)
+        if (state.wakeLockWanted) {
+          requestWakeLock().catch(() => {});
+        }
+      } catch (err) {
+        console.error('Error starting prompter view:', err);
+        // Fail-safe view switch fallback
+        editorView.classList.remove('active');
+        prompterView.classList.add('active');
       }
-
-      // Render sanitized HTML into teleprompter
-      prompterText.innerHTML = cleanMarkdownToSanitizedHTML(current.content);
-
-      // Start position management (Resume memory or Reverse initialization)
-      if (state.reverseScroll) {
-        prompterViewport.scrollTop = current.lastPosition > 0 
-          ? current.lastPosition 
-          : prompterViewport.scrollHeight - prompterViewport.clientHeight;
-      } else {
-        prompterViewport.scrollTop = current.lastPosition || 0;
-      }
-
-      editorView.classList.remove('active');
-      prompterView.classList.add('active');
-
-      if (state.wakeLockWanted) {
-        requestWakeLock();
-      }
-      resetHudTimeout();
-      updateProgress();
-      updateSessionTiming();
-      updatePlayButtonUI(false);
-
-      // Reset first-take state: DO NOT auto-countdown; wait for user input (Space or Play button)
-      state.hasStartedFirstTake = false;
-      showToast('Press Space or Play to begin');
     }
 
     function exitPrompter() {
@@ -2310,37 +2318,40 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     // 8. Screen Wake Lock Management (Robust Lifecycle Sync)
     // -------------------------------------------------------------
     async function requestWakeLock() {
-      if ('wakeLock' in navigator) {
-        try {
-          if (state.wakeLock) {
-            await state.wakeLock.release();
-            state.wakeLock = null;
-          }
-          state.wakeLock = await navigator.wakeLock.request('screen');
-          state.wakeLockWanted = true;
-          statusBadge.classList.remove('inactive');
-          wakeLockStatusText.textContent = 'AWAKE: ON';
-
-          state.wakeLock.addEventListener('release', () => {
-            state.wakeLock = null;
-            if (!state.wakeLockWanted) {
-              statusBadge.classList.add('inactive');
-              wakeLockStatusText.textContent = 'AWAKE: OFF';
-            }
-          });
-        } catch (err) {
-          statusBadge.classList.add('inactive');
-          wakeLockStatusText.textContent = 'AWAKE: OFF';
-        }
-      } else {
+      if (!('wakeLock' in navigator)) {
         statusBadge.classList.add('inactive');
         wakeLockStatusText.textContent = 'UNSUPPORTED';
+        return;
+      }
+      try {
+        if (state.wakeLock) {
+          try { await state.wakeLock.release(); } catch (_) {}
+          state.wakeLock = null;
+        }
+        state.wakeLock = await navigator.wakeLock.request('screen');
+        state.wakeLockWanted = true;
+        statusBadge.classList.remove('inactive');
+        wakeLockStatusText.textContent = 'AWAKE: ON';
+
+        state.wakeLock.addEventListener('release', () => {
+          state.wakeLock = null;
+          if (!state.wakeLockWanted) {
+            statusBadge.classList.add('inactive');
+            wakeLockStatusText.textContent = 'AWAKE: OFF';
+          }
+        });
+      } catch (err) {
+        console.warn('Wake Lock request skipped or blocked:', err);
+        statusBadge.classList.add('inactive');
+        wakeLockStatusText.textContent = 'AWAKE: OFF';
       }
     }
 
     function releaseWakeLock() {
       if (state.wakeLock) {
-        state.wakeLock.release().catch(() => {});
+        try {
+          state.wakeLock.release().catch(() => {});
+        } catch (_) {}
         state.wakeLock = null;
       }
       statusBadge.classList.add('inactive');
@@ -2354,14 +2365,15 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         showToast('Screen Sleep Allowed');
       } else {
         state.wakeLockWanted = true;
-        requestWakeLock();
-        showToast('Screen Keep Awake Enabled');
+        requestWakeLock().then(() => {
+          if (state.wakeLock) showToast('Screen Keep Awake Enabled');
+        }).catch(() => {});
       }
     }
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && prompterView.classList.contains('active') && state.wakeLockWanted) {
-        requestWakeLock();
+        requestWakeLock().catch(() => {});
       }
     });
 
