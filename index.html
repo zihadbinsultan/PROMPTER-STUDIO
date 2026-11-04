@@ -51,6 +51,7 @@
       --text-dim: #555555;
       --card-bg: rgba(24, 24, 28, 0.65);
       --focus-guide: rgba(41, 151, 255, 0.85);
+      --mask-grad: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.05) 55%, rgba(0,0,0,0.85) 100%);
     }
 
     body.theme-paper {
@@ -59,6 +60,7 @@
       --text-dim: #c7c7cc;
       --card-bg: rgba(240, 240, 244, 0.8);
       --focus-guide: rgba(0, 113, 227, 0.75);
+      --mask-grad: linear-gradient(180deg, rgba(251,251,253,0.88) 0%, rgba(251,251,253,0.08) 35%, rgba(251,251,253,0.08) 55%, rgba(251,251,253,0.88) 100%);
     }
 
     body.theme-sepia {
@@ -67,6 +69,7 @@
       --text-dim: #4d443c;
       --card-bg: rgba(34, 28, 25, 0.75);
       --focus-guide: rgba(230, 160, 60, 0.85);
+      --mask-grad: linear-gradient(180deg, rgba(24,20,18,0.88) 0%, rgba(24,20,18,0.08) 35%, rgba(24,20,18,0.08) 55%, rgba(24,20,18,0.88) 100%);
     }
 
     * {
@@ -476,6 +479,21 @@
       display: none;
     }
 
+    /* Focus Vignette Mask: Dims text outside the reading eyeline */
+    .prompter-vignette-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+      background: var(--mask-grad);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .prompter-vignette-overlay.active {
+      opacity: 1;
+    }
+
     .prompter-mirror-x { transform: scaleX(-1); }
     .prompter-mirror-y { transform: scaleY(-1); }
     .prompter-mirror-xy { transform: scale(-1, -1); }
@@ -513,7 +531,7 @@
       align-items: center;
       justify-content: space-between;
       opacity: 0.75;
-      transition: opacity 0.3s;
+      transition: opacity 0.3s, top 0.15s ease-out;
     }
 
     .eyeline-guide.hide {
@@ -549,11 +567,60 @@
       transition: width 0.1s linear;
     }
 
-    /* Minimalist Apple Keep-Awake Status Pill (No Eye Icon) */
-    .prompter-status-tag {
+    /* Top Status Bar & Session Telemetry */
+    .prompter-top-bar {
       position: absolute;
       top: 14px;
+      left: 18px;
       right: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    .prompter-top-bar > * {
+      pointer-events: auto;
+    }
+
+    .session-timer-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(22, 22, 25, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #f5f5f7;
+      letter-spacing: 0.02em;
+    }
+
+    .session-timer-rec {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff453a;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+
+    .session-timer-rec.recording {
+      opacity: 1;
+      animation: pulseRecord 1.2s infinite;
+    }
+
+    @keyframes pulseRecord {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Minimalist Apple Keep-Awake Status Pill */
+    .prompter-status-tag {
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 0.72rem;
@@ -566,7 +633,6 @@
       background: rgba(22, 22, 25, 0.85);
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      z-index: 60;
       color: #34c759;
       cursor: pointer;
       transition: all 0.25s var(--ease-apple);
@@ -596,12 +662,16 @@
       box-shadow: none;
     }
 
-    /* Top-Left Dynamic Voice Cruise Control Pill */
+    /* Top-Left Dynamic Voice Cruise Control Pill & Calibration Flyout */
+    .voice-control-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
     .voice-cruise-hud {
-      position: absolute;
-      top: 14px;
-      left: 18px;
-      z-index: 60;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -665,128 +735,61 @@
       display: inline-block;
     }
 
-    /* Transparent Countdown Overlay: Prompter text stays 100% visible */
-    .countdown-overlay {
-      position: absolute;
-      top: 36%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 90;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s var(--ease-apple);
-    }
-
-    .countdown-overlay.show {
-      opacity: 1;
-    }
-
-    .countdown-badge {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      background: rgba(18, 18, 20, 0.82);
+    /* Voice Sensitivity Popover & Live VU Meter */
+    .voice-calib-popover {
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(24, 24, 28, 0.94);
       backdrop-filter: blur(24px);
-      border: 2px solid rgba(41, 151, 255, 0.7);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(41, 151, 255, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .countdown-number {
-      font-size: 3.2rem;
-      font-weight: 800;
-      color: #ffffff;
-      line-height: 1;
-      animation: pulsePop 1s infinite;
-    }
-
-    @keyframes pulsePop {
-      0% { transform: scale(0.8); opacity: 0; }
-      40% { transform: scale(1.08); opacity: 1; }
-      70% { transform: scale(1); opacity: 1; }
-      100% { transform: scale(0.92); opacity: 0.1; }
-    }
-
-    /* Floating Studio HUD */
-    .studio-hud {
-      position: absolute;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(0);
-      z-index: 80;
-      display: flex;
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.65);
+      display: none;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      opacity: 1;
-      transition: opacity 0.35s var(--ease-apple), transform 0.35s var(--ease-apple);
-    }
-
-    .studio-hud.hud-hidden {
-      opacity: 0;
-      transform: translateX(-50%) translateY(20px);
-      pointer-events: none;
-    }
-
-    .hud-island {
-      display: flex;
-      align-items: center;
-      padding: 7px 12px;
       gap: 8px;
-      border-radius: 999px;
+      min-width: 220px;
     }
 
-    .hud-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.08);
-      color: #f5f5f7;
+    .voice-calib-popover.open {
+      display: flex;
+    }
+
+    .calib-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
-    .hud-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+    .vu-meter-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
     }
 
-    .hud-btn.active {
+    .vu-meter-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #34c759 60%, #ffd60a 85%, #ff453a 100%);
+      transition: width 0.05s linear;
+    }
+
+    .vu-threshold-notch {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
       background: #2997ff;
-      color: #ffffff;
+      transform: translateX(-50%);
     }
 
-    .hud-btn-play {
-      width: 52px;
-      height: 52px;
-      background: #ffffff;
-      color: #000000;
-      box-shadow: 0 4px 18px rgba(255, 255, 255, 0.3);
-    }
-
-    .hud-btn-play:hover {
-      background: #e5e5ea;
-    }
-
-    .hud-speed-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 10px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
+    /* Transparent Countdown Overlay */
     .hud-slider {
       -webkit-appearance: none;
       width: 85px;
@@ -1128,24 +1131,56 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       <div id="progressFill" class="prompter-progress-fill"></div>
     </div>
 
-    <!-- Top-Left Dynamic Voice Cruise Control Pill -->
-    <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise Control">
-      <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
-      <span id="voiceCruiseLabel">VOICE CRUISE: OFF</span>
-      <div class="voice-wave" id="voiceWaveContainer">
-        <span class="voice-wave-bar" id="vBar1"></span>
-        <span class="voice-wave-bar" id="vBar2"></span>
-        <span class="voice-wave-bar" id="vBar3"></span>
-        <span class="voice-wave-bar" id="vBar4"></span>
-      </div>
-      <span id="voiceLiveWpm" class="voice-wpm-badge">LISTENING</span>
-    </div>
+    <!-- Top Telemetry & Controls Bar -->
+    <header class="prompter-top-bar">
+      <!-- Voice Cruise Control with Live Acoustic Calibration -->
+      <div class="voice-control-wrapper">
+        <div class="voice-cruise-hud" id="voiceCruisePill" title="Toggle Dynamic Voice Cruise Control">
+          <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
+          <span id="voiceCruiseLabel">VOICE CRUISE: OFF</span>
+          <div class="voice-wave" id="voiceWaveContainer">
+            <span class="voice-wave-bar" id="vBar1"></span>
+            <span class="voice-wave-bar" id="vBar2"></span>
+            <span class="voice-wave-bar" id="vBar3"></span>
+            <span class="voice-wave-bar" id="vBar4"></span>
+          </div>
+          <span id="voiceLiveWpm" class="voice-wpm-badge">SPEAK ALOUD</span>
+          <button id="btnVoiceCalib" class="btn btn-icon-only" style="width: 22px; height: 22px; border: none; background: transparent; padding: 0;" title="Acoustic Sensitivity Calibration">
+            <i data-lucide="sliders-horizontal" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
+          </button>
+        </div>
 
-    <!-- Apple Minimalist Keep-Awake Pill (No Eye Icon) -->
-    <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display sleep prevention">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="wakeLockStatusText">AWAKE: ON</span>
-    </div>
+        <!-- Popover VU-meter & Mic Sensitivity Slider -->
+        <div id="voiceCalibPopover" class="voice-calib-popover">
+          <div class="calib-header">
+            <span>Mic Sensitivity</span>
+            <span id="micSensValueLabel" style="color: #64b5ff;">0.035</span>
+          </div>
+          <input type="range" id="micSensSlider" class="hud-slider" style="width: 100%;" min="0.010" max="0.080" step="0.005" value="0.035">
+          <div class="vu-meter-track" title="Live Audio Energy vs Trigger Threshold (Blue Notch)">
+            <div id="vuMeterBar" class="vu-meter-bar"></div>
+            <div id="vuThresholdNotch" class="vu-threshold-notch" style="left: 43%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Session Recording & Remaining Reading Timer -->
+      <div class="session-timer-pill" id="sessionTimerPill" title="Session Elapsed / Est. Remaining">
+        <span class="session-timer-rec" id="sessionRecDot"></span>
+        <span id="sessionTimerDisplay">00:00</span>
+        <span style="opacity: 0.35;">/</span>
+        <span id="sessionRemainingDisplay" style="color: var(--text-muted);">00:00 REM</span>
+      </div>
+
+      <!-- Apple Minimalist Keep-Awake Pill -->
+      <div class="prompter-status-tag" id="statusBadge" title="Click to toggle display sleep prevention">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="wakeLockStatusText">AWAKE: ON</span>
+      </div>
+    </header>
+
+    <!-- Reading Vignette Focus Overlay (Dims text outside active reading lane) -->
+    <div id="vignetteOverlay" class="prompter-vignette-overlay"></div>
 
     <div id="eyelineGuide" class="eyeline-guide">
       <div class="eyeline-bracket-left"></div>
@@ -1165,7 +1200,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       </div>
     </div>
 
-    <!-- Floating Glass HUD -->
+    <!-- Floating Studio HUD -->
     <div id="studioHud" class="studio-hud">
       <!-- Secondary Drawer -->
       <div id="settingsDrawer" class="glass-pill hud-settings-drawer hidden">
@@ -1179,6 +1214,12 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           <input type="range" id="widthSlider" class="hud-slider" min="400" max="1400" value="820" step="20">
         </div>
 
+        <!-- Eyeline Anchor Height Slider -->
+        <div class="hud-setting-group">
+          <span class="hud-label">Eyeline</span>
+          <input type="range" id="eyelineSlider" class="hud-slider" min="25" max="60" value="42" step="1">
+        </div>
+
         <div class="hud-setting-group">
           <span class="hud-label">Presets</span>
           <button class="wpm-preset-btn" data-wpm="100">100</button>
@@ -1188,8 +1229,11 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         </div>
 
         <div class="hud-setting-group">
-          <button id="btnToggleGuide" class="hud-btn active" title="Toggle Focus Guide">
+          <button id="btnToggleGuide" class="hud-btn active" title="Toggle Eyeline Guide">
             <i data-lucide="crosshair" style="width: 17px; height: 17px;"></i>
+          </button>
+          <button id="btnToggleVignette" class="hud-btn" title="Toggle Shaded Focus Vignette">
+            <i data-lucide="sun-dim" style="width: 17px; height: 17px;"></i>
           </button>
         </div>
 
@@ -1372,7 +1416,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       wpm: 150, // Words per minute
       fontSize: 48,
       readingWidth: 820,
+      eyelinePercent: 42,
       showEyelineGuide: true,
+      focusVignette: false,
       mirrorX: false,
       mirrorY: false,
       reverseScroll: false,
@@ -1382,7 +1428,8 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       isCountdownActive: false,
       hasStartedFirstTake: false,
       voiceCruiseActive: false,
-      currentDynamicWpm: 150
+      currentDynamicWpm: 150,
+      micSensitivity: 0.035
     };
 
     // Audio & Mic Analysis State
@@ -1392,6 +1439,18 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     let micDataArray = null;
     let isUserSpeaking = false;
     let voiceScrollVelocity = 0;
+
+    // Session Timer State
+    let sessionStartTime = null;
+    let sessionElapsedSeconds = 0;
+    let sessionTimerInterval = null;
+
+    // Element References
+    const editorView = document.getElementById('editorView');
+    const prompterView = document.getElementById('prompterView');
+    const scriptTitleInput = document.getElementById('scriptTitleInput');
+    const scriptContentInput = document.getElementById('scriptContentInput');
+    const wordCountLabel = document.getElementById('wordCountLabel');
     const readingTimeLabel = document.getElementById('readingTimeLabel');
     const saveStatus = document.getElementById('saveStatus');
     const fileInput = document.getElementById('fileInput');
@@ -1406,6 +1465,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     const studioHud = document.getElementById('studioHud');
     const settingsDrawer = document.getElementById('settingsDrawer');
     const eyelineGuide = document.getElementById('eyelineGuide');
+    const vignetteOverlay = document.getElementById('vignetteOverlay');
     const progressFill = document.getElementById('progressFill');
     const progressTrack = document.getElementById('progressTrack');
     const scrubberSlider = document.getElementById('scrubberSlider');
@@ -1416,12 +1476,21 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     const speedValueLabel = document.getElementById('speedValueLabel');
     const fontSizeSlider = document.getElementById('fontSizeSlider');
     const widthSlider = document.getElementById('widthSlider');
+    const eyelineSlider = document.getElementById('eyelineSlider');
     const btnPlayPause = document.getElementById('btnPlayPause');
     const statusBadge = document.getElementById('statusBadge');
     const wakeLockStatusText = document.getElementById('wakeLockStatusText');
     const voiceCruisePill = document.getElementById('voiceCruisePill');
     const voiceCruiseLabel = document.getElementById('voiceCruiseLabel');
     const voiceLiveWpm = document.getElementById('voiceLiveWpm');
+    const voiceCalibPopover = document.getElementById('voiceCalibPopover');
+    const micSensSlider = document.getElementById('micSensSlider');
+    const micSensValueLabel = document.getElementById('micSensValueLabel');
+    const vuMeterBar = document.getElementById('vuMeterBar');
+    const vuThresholdNotch = document.getElementById('vuThresholdNotch');
+    const sessionTimerDisplay = document.getElementById('sessionTimerDisplay');
+    const sessionRemainingDisplay = document.getElementById('sessionRemainingDisplay');
+    const sessionRecDot = document.getElementById('sessionRecDot');
     const shortcutsModal = document.getElementById('shortcutsModal');
     const toast = document.getElementById('toast');
 
@@ -1756,6 +1825,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       }
       resetHudTimeout();
       updateProgress();
+      updateSessionTiming();
       updatePlayButtonUI(false);
 
       // Reset first-take state: DO NOT auto-countdown; wait for user input (Space or Play button)
@@ -1765,8 +1835,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
     function exitPrompter() {
       pausePrompter();
+      stopSessionTimer();
       if (state.voiceCruiseActive) {
-        toggleVoiceCruise();
+        stopVoiceCruise();
       }
       const current = getCurrentScript();
       if (current) {
@@ -1779,6 +1850,59 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
+    }
+
+    // -------------------------------------------------------------
+    // Live Session Elapsed & Remaining Timer Engine
+    // -------------------------------------------------------------
+    function startSessionTimer() {
+      if (sessionTimerInterval) return;
+      sessionStartTime = Date.now() - (sessionElapsedSeconds * 1000);
+      sessionRecDot.classList.add('recording');
+      sessionTimerInterval = setInterval(() => {
+        sessionElapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+        updateSessionTiming();
+      }, 500);
+    }
+
+    function pauseSessionTimer() {
+      if (sessionTimerInterval) {
+        clearInterval(sessionTimerInterval);
+        sessionTimerInterval = null;
+      }
+      sessionRecDot.classList.remove('recording');
+    }
+
+    function stopSessionTimer() {
+      pauseSessionTimer();
+      sessionElapsedSeconds = 0;
+      updateSessionTiming();
+    }
+
+    function updateSessionTiming() {
+      // Format Elapsed
+      const em = Math.floor(sessionElapsedSeconds / 60);
+      const es = sessionElapsedSeconds % 60;
+      sessionTimerDisplay.textContent = `${em < 10 ? '0' : ''}${em}:${es < 10 ? '0' : ''}${es}`;
+
+      // Calculate Remaining based on remaining distance and current WPM
+      const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
+      if (maxScroll <= 0) {
+        sessionRemainingDisplay.textContent = '00:00 REM';
+        return;
+      }
+      let fractionLeft = 1 - (prompterViewport.scrollTop / maxScroll);
+      if (state.reverseScroll) fractionLeft = prompterViewport.scrollTop / maxScroll;
+      fractionLeft = Math.max(0, Math.min(1, fractionLeft));
+
+      const current = getCurrentScript();
+      const totalWords = current && current.content.trim() ? current.content.trim().split(/\s+/).length : 0;
+      const effectiveWpm = state.currentDynamicWpm || state.wpm;
+      const remainingSeconds = Math.round((totalWords * fractionLeft / effectiveWpm) * 60);
+
+      const rm = Math.floor(remainingSeconds / 60);
+      const rs = remainingSeconds % 60;
+      sessionRemainingDisplay.textContent = `${rm < 10 ? '0' : ''}${rm}:${rs < 10 ? '0' : ''}${rs} REM`;
     }
 
     function updatePlayButtonUI(isPlaying) {
@@ -1827,6 +1951,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       if (state.isPlaying) return;
       state.isPlaying = true;
       updatePlayButtonUI(true);
+      startSessionTimer();
       lastTimestamp = performance.now();
       animationFrameId = requestAnimationFrame(scrollStep);
       resetHudTimeout();
@@ -1835,6 +1960,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     function pausePrompter() {
       state.isPlaying = false;
       updatePlayButtonUI(false);
+      pauseSessionTimer();
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
@@ -1958,15 +2084,15 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
         const source = audioContext.createMediaStreamSource(micMediaStream);
         micAnalyserNode = audioContext.createAnalyser();
-        micAnalyserNode.fftSize = 128;
-        micAnalyserNode.smoothingTimeConstant = 0.5;
+        micAnalyserNode.fftSize = 1024;
+        micAnalyserNode.smoothingTimeConstant = 0.4;
         source.connect(micAnalyserNode);
 
-        micDataArray = new Uint8Array(micAnalyserNode.frequencyBinCount);
+        micDataArray = new Uint8Array(micAnalyserNode.fftSize);
 
         // Start high-frequency mic volume monitor
         if (micMonitorInterval) clearInterval(micMonitorInterval);
-        micMonitorInterval = setInterval(sampleMicrophoneLevel, 40);
+        micMonitorInterval = setInterval(sampleMicrophoneLevel, 35);
 
         return true;
       } catch (err) {
@@ -1978,15 +2104,17 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     function sampleMicrophoneLevel() {
       if (!micAnalyserNode || !state.voiceCruiseActive) return;
 
-      micAnalyserNode.getByteFrequencyData(micDataArray);
+      // Measure true acoustic time-domain waveform
+      micAnalyserNode.getByteTimeDomainData(micDataArray);
       let sum = 0;
       for (let i = 0; i < micDataArray.length; i++) {
-        sum += micDataArray[i];
+        const sample = (micDataArray[i] - 128) / 128;
+        sum += sample * sample;
       }
-      const avgVolume = sum / micDataArray.length;
+      const rms = Math.sqrt(sum / micDataArray.length);
 
-      // Animate waveform bars based on real physical microphone energy
-      const normalizedVol = Math.min(1, avgVolume / 70);
+      // Animate waveform bars and VU meter
+      const normalizedVol = Math.min(1, rms * 14);
       if (vBars[0]) {
         vBars[0].style.height = `${Math.max(4, normalizedVol * 16)}px`;
         vBars[1].style.height = `${Math.max(4, normalizedVol * 22)}px`;
@@ -1994,20 +2122,24 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         vBars[3].style.height = `${Math.max(4, normalizedVol * 13)}px`;
       }
 
-      // Voice Activity Threshold: avgVolume > 14 indicates user is speaking aloud
-      const speechDetected = avgVolume > 14;
+      if (vuMeterBar) {
+        vuMeterBar.style.width = `${Math.min(100, (rms / 0.08) * 100)}%`;
+      }
+
+      // Voice Activity Threshold: user configurable sensitivity
+      const speechDetected = rms > state.micSensitivity;
       if (speechDetected) {
         isUserSpeaking = true;
-        if (voiceLiveWpm && voiceLiveWpm.textContent === 'PAUSED') {
-          voiceLiveWpm.textContent = `${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
-        }
         if (silenceTimer) clearTimeout(silenceTimer);
+        voiceLiveWpm.textContent = `${Math.round(state.currentDynamicWpm || state.wpm)} WPM`;
+
+        // 350ms Silence Timeout: brakes smoothly when you pause
         silenceTimer = setTimeout(() => {
           isUserSpeaking = false;
-          if (voiceLiveWpm && state.voiceCruiseActive) {
+          if (state.voiceCruiseActive) {
             voiceLiveWpm.textContent = 'PAUSED';
           }
-        }, 1200);
+        }, 350);
       }
     }
 
@@ -2029,7 +2161,6 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           }
           const words = transcriptChunk.trim().split(/\s+/).filter(w => w.length > 0);
           if (words.length > 0) {
-            isUserSpeaking = true;
             for (let k = 0; k < words.length; k++) {
               spokenWordsTimeline.push(now);
             }
@@ -2040,7 +2171,9 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
               const calculatedWpm = Math.round((spokenWordsTimeline.length / durationSec) * 60);
               targetVoiceWpm = Math.max(70, Math.min(260, calculatedWpm));
               state.currentDynamicWpm = targetVoiceWpm;
-              voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
+              if (isUserSpeaking) {
+                voiceLiveWpm.textContent = `${targetVoiceWpm} WPM`;
+              }
             }
           }
         };
@@ -2117,135 +2250,15 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
 
       voiceCruisePill.classList.remove('active');
       voiceCruiseLabel.textContent = 'VOICE CRUISE: OFF';
-      voiceLiveWpm.textContent = '-- WPM';
+      voiceLiveWpm.textContent = 'SPEAK ALOUD';
+      voiceCalibPopover.classList.remove('open');
       if (silenceTimer) clearTimeout(silenceTimer);
 
       // Reset waveform bars to rest position
       vBars.forEach(bar => {
         if (bar) bar.style.height = '4px';
       });
-    }
-
-    function exitPrompter() {
-      pausePrompter();
-      const current = getCurrentScript();
-      if (current) {
-        current.lastPosition = prompterViewport.scrollTop;
-        dbSaveScript(current);
-      }
-      releaseWakeLock();
-      prompterView.classList.remove('active');
-      editorView.classList.add('active');
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
-    }
-
-    function updatePlayButtonUI(isPlaying) {
-      if (isPlaying) {
-        btnPlayPause.innerHTML = `<i data-lucide="pause" style="width: 22px; height: 22px;"></i>`;
-        btnPlayPause.style.background = '#2997ff';
-        btnPlayPause.style.color = '#ffffff';
-        btnPlayPause.style.boxShadow = '0 0 20px rgba(41, 151, 255, 0.6)';
-        btnPlayPause.title = 'Pause (Space)';
-      } else {
-        btnPlayPause.innerHTML = `<i data-lucide="play" style="width: 22px; height: 22px; margin-left: 2px;"></i>`;
-        btnPlayPause.style.background = '#ffffff';
-        btnPlayPause.style.color = '#000000';
-        btnPlayPause.style.boxShadow = '0 4px 18px rgba(255, 255, 255, 0.3)';
-        btnPlayPause.title = 'Play (Space)';
-      }
-      lucide.createIcons();
-    }
-
-    function runCountdown(callback) {
-      state.isCountdownActive = true;
-      let count = 3;
-      countdownOverlay.classList.add('show');
-      countdownNumber.textContent = count;
-
-      const timer = setInterval(() => {
-        if (!prompterView.classList.contains('active')) {
-          clearInterval(timer);
-          return;
-        }
-        count--;
-        if (count > 0) {
-          countdownNumber.textContent = count;
-        } else {
-          clearInterval(timer);
-          countdownOverlay.classList.remove('show');
-          state.isCountdownActive = false;
-          if (callback) callback();
-        }
-      }, 900);
-    }
-
-    function playPrompter() {
-      if (state.isPlaying) return;
-      state.isPlaying = true;
-      updatePlayButtonUI(true);
-      lastTimestamp = performance.now();
-      animationFrameId = requestAnimationFrame(scrollStep);
-      resetHudTimeout();
-    }
-
-    function pausePrompter() {
-      state.isPlaying = false;
-      updatePlayButtonUI(false);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-      const current = getCurrentScript();
-      if (current) {
-        current.lastPosition = prompterViewport.scrollTop;
-        dbSaveScript(current);
-      }
-      showHUD();
-    }
-
-    function togglePlayPause() {
-      if (state.isCountdownActive) return;
-      if (state.isPlaying) {
-        pausePrompter();
-      } else {
-        playPrompter();
-      }
-    }
-
-    function scrollStep(currentTimestamp) {
-      if (!state.isPlaying) return;
-
-      const delta = (currentTimestamp - lastTimestamp) / 1000;
-      lastTimestamp = currentTimestamp;
-
-      // Calibration: Convert WPM into precise vertical pixel speed based on typography
-      // Average line ~ 9 words. Pixel height per line ~ fontSize * 1.55.
-      const wordsPerSec = state.wpm / 60;
-      const lineHeightPx = state.fontSize * 1.55;
-      const pxPerSecond = (wordsPerSec / 8.5) * lineHeightPx;
-      const movement = pxPerSecond * delta;
-
-      if (state.reverseScroll) {
-        prompterViewport.scrollTop -= movement;
-        if (prompterViewport.scrollTop <= 2) {
-          pausePrompter();
-          showToast('Reached beginning');
-          return;
-        }
-      } else {
-        prompterViewport.scrollTop += movement;
-        const maxScroll = prompterViewport.scrollHeight - prompterViewport.clientHeight;
-        if (prompterViewport.scrollTop >= maxScroll - 2) {
-          pausePrompter();
-          showToast('Finished script');
-          return;
-        }
-      }
-
-      updateProgress();
-      animationFrameId = requestAnimationFrame(scrollStep);
+      if (vuMeterBar) vuMeterBar.style.width = '0%';
     }
 
     function updateProgress() {
@@ -2268,6 +2281,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       if (scrubberPercentLabel) {
         scrubberPercentLabel.textContent = `${Math.round(clampedPct)}%`;
       }
+      updateSessionTiming();
     }
 
     function scrubToPercent(pctVal) {
@@ -2356,6 +2370,7 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
     // -------------------------------------------------------------
     function showHUD() {
       studioHud.classList.remove('hud-hidden');
+      document.querySelector('.prompter-top-bar').style.opacity = '1';
       prompterView.classList.add('cursor-show');
     }
 
@@ -2363,6 +2378,8 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       if (state.isPlaying) {
         studioHud.classList.add('hud-hidden');
         settingsDrawer.classList.add('hidden');
+        voiceCalibPopover.classList.remove('open');
+        document.querySelector('.prompter-top-bar').style.opacity = '0.12';
         prompterView.classList.remove('cursor-show');
       }
     }
@@ -2388,6 +2405,13 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       document.getElementById('btnMirrorY').classList.toggle('active', state.mirrorY);
     }
 
+    function setEyelineHeight(pct) {
+      state.eyelinePercent = Math.max(25, Math.min(60, pct));
+      eyelineGuide.style.top = `${state.eyelinePercent}%`;
+      eyelineSlider.value = state.eyelinePercent;
+      saveSettings();
+    }
+
     function applyTheme(themeName) {
       state.theme = themeName;
       document.body.classList.remove('theme-midnight', 'theme-paper', 'theme-sepia');
@@ -2406,6 +2430,17 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         btn.classList.toggle('active', parseInt(btn.dataset.wpm, 10) === state.wpm);
       });
       updateStats();
+      updateSessionTiming();
+      saveSettings();
+    }
+
+    function setMicSensitivity(val) {
+      state.micSensitivity = parseFloat(val);
+      micSensSlider.value = state.micSensitivity;
+      micSensValueLabel.textContent = state.micSensitivity.toFixed(3);
+      if (vuThresholdNotch) {
+        vuThresholdNotch.style.left = `${Math.min(100, (state.micSensitivity / 0.08) * 100)}%`;
+      }
       saveSettings();
     }
 
@@ -2417,18 +2452,25 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           state.wpm = parsed.wpm || 150;
           state.fontSize = parsed.fontSize || 48;
           state.readingWidth = parsed.readingWidth || 820;
+          state.eyelinePercent = parsed.eyelinePercent || 42;
           state.theme = parsed.theme || 'midnight';
           state.showEyelineGuide = parsed.showEyelineGuide !== undefined ? parsed.showEyelineGuide : true;
+          state.focusVignette = parsed.focusVignette || false;
+          state.micSensitivity = parsed.micSensitivity || 0.035;
         }
       } catch (e) {}
 
       applyTheme(state.theme);
       setWPM(state.wpm);
+      setEyelineHeight(state.eyelinePercent);
+      setMicSensitivity(state.micSensitivity);
       fontSizeSlider.value = state.fontSize;
       widthSlider.value = state.readingWidth;
       prompterText.style.fontSize = `${state.fontSize}px`;
       prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
       if (!state.showEyelineGuide) eyelineGuide.classList.add('hide');
+      vignetteOverlay.classList.toggle('active', state.focusVignette);
+      document.getElementById('btnToggleVignette').classList.toggle('active', state.focusVignette);
     }
 
     function saveSettings() {
@@ -2437,8 +2479,11 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
           wpm: state.wpm,
           fontSize: state.fontSize,
           readingWidth: state.readingWidth,
+          eyelinePercent: state.eyelinePercent,
           theme: state.theme,
-          showEyelineGuide: state.showEyelineGuide
+          showEyelineGuide: state.showEyelineGuide,
+          focusVignette: state.focusVignette,
+          micSensitivity: state.micSensitivity
         }));
       } catch (e) {}
     }
@@ -2543,13 +2588,26 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
       // Prompter HUD Controls
       document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
       statusBadge.addEventListener('click', toggleWakeLock);
-      voiceCruisePill.addEventListener('click', toggleVoiceCruise);
+      voiceCruisePill.addEventListener('click', (e) => {
+        if (e.target.closest('#btnVoiceCalib')) return;
+        toggleVoiceCruise();
+      });
+
+      document.getElementById('btnVoiceCalib').addEventListener('click', (e) => {
+        e.stopPropagation();
+        voiceCalibPopover.classList.toggle('open');
+      });
+
+      micSensSlider.addEventListener('input', (e) => {
+        setMicSensitivity(e.target.value);
+      });
 
       document.getElementById('btnResetScroll').addEventListener('click', () => {
         prompterViewport.scrollTop = state.reverseScroll 
           ? prompterViewport.scrollHeight - prompterViewport.clientHeight 
           : 0;
         updateProgress();
+        stopSessionTimer();
         showToast('Restarted');
       });
 
@@ -2584,12 +2642,22 @@ Headings, bullets, and emphasis are automatically sanitized and converted into r
         prompterWrapper.style.maxWidth = `${state.readingWidth}px`;
         saveSettings();
       });
+      eyelineSlider.addEventListener('input', (e) => {
+        setEyelineHeight(parseInt(e.target.value, 10));
+      });
 
       document.getElementById('btnToggleSettings').addEventListener('click', () => settingsDrawer.classList.toggle('hidden'));
       document.getElementById('btnToggleGuide').addEventListener('click', () => {
         state.showEyelineGuide = !state.showEyelineGuide;
         eyelineGuide.classList.toggle('hide', !state.showEyelineGuide);
         document.getElementById('btnToggleGuide').classList.toggle('active', state.showEyelineGuide);
+        saveSettings();
+      });
+
+      document.getElementById('btnToggleVignette').addEventListener('click', () => {
+        state.focusVignette = !state.focusVignette;
+        vignetteOverlay.classList.toggle('active', state.focusVignette);
+        document.getElementById('btnToggleVignette').classList.toggle('active', state.focusVignette);
         saveSettings();
       });
 
